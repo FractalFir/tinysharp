@@ -1,5 +1,6 @@
-mod ir_op;
 mod ir;
+mod ir_op;
+use crate::method::Method;
 use ir::*;
 #[test]
 fn test_nop() {
@@ -64,7 +65,7 @@ fn test_mag_2_f32() {
     let method = Method::from_ops(sig, &ops).expect("Could not compile method `Mag2`");
 }
 #[test]
-fn test_abs(){
+fn test_abs() {
     use crate::ir_op::*;
     let args: [Type; 1] = [Type::I32];
     let sig: (&[Type], Type) = (&args, Type::I32);
@@ -102,4 +103,3 @@ fn test_factorial(){
     ];
     let method = Method::from_ops(sig, &ops).expect("Could not compile method `Mag2`");
 }*/
-
