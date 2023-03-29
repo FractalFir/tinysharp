@@ -1,4 +1,6 @@
 mod ir_op;
+mod ir;
+use ir::*;
 #[test]
 fn test_nop() {
     use crate::ir_op::*;
@@ -61,3 +63,43 @@ fn test_mag_2_f32() {
     ];
     let method = Method::from_ops(sig, &ops).expect("Could not compile method `Mag2`");
 }
+#[test]
+fn test_abs(){
+    use crate::ir_op::*;
+    let args: [Type; 1] = [Type::I32];
+    let sig: (&[Type], Type) = (&args, Type::I32);
+    let ops = [
+        OpKind::LDArg(0),
+        OpKind::LDCI32(0),
+        OpKind::BGE(6),
+        OpKind::LDArg(0),
+        OpKind::Neg,
+        OpKind::Ret,
+        OpKind::LDArg(0),
+        OpKind::Ret,
+    ];
+    let method = Method::from_ops(sig, &ops).expect("Could not compile method `Abs`");
+}
+/*
+#[test]
+fn test_factorial(){
+     use crate::ir_op::*;
+    let args: [Type; 1] = [Type::I32];
+    let sig: (&[Type], Type) = (&args, Type::I32);
+    let ops = [
+        OpKind::LDCI32(1),
+        OpKind::LDArg(0),
+        OpKind::Mul,
+        OpKind::LDArg(1),
+        OpKind::LDArg(1),
+        OpKind::Mul,
+        OpKind::Add,
+        OpKind::LDArg(2),
+        OpKind::LDArg(2),
+        OpKind::Mul,
+        OpKind::Add,
+        OpKind::Ret,
+    ];
+    let method = Method::from_ops(sig, &ops).expect("Could not compile method `Mag2`");
+}*/
+
