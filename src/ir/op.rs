@@ -67,7 +67,7 @@ impl Op {
             resolved_type: None,
         }
     }
-    pub(crate) fn resolved_type(&self)->Option<Type>{
+    pub(crate) fn resolved_type(&self) -> Option<Type> {
         self.resolved_type
     }
     pub(crate) fn kind(&self) -> OpKind {
@@ -153,5 +153,5 @@ impl Op {
         Ok(())
     }
 }
-use inkwell::values::AnyValueEnum;
 use inkwell::basic_block::BasicBlock;
+use inkwell::values::AnyValueEnum;

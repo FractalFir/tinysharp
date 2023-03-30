@@ -1,7 +1,7 @@
 mod ir;
-use crate::ir::{method::Method,op::OpKind,r#type::Type};
-use ir::*;
+use crate::ir::{method::Method, op::OpKind, r#type::Type};
 use inkwell::context::Context;
+use ir::*;
 #[test]
 fn test_nop() {
     let args: [Type; 0] = [];
@@ -12,7 +12,7 @@ fn test_nop() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("nop", fn_type, None);
-    method.emmit_llvm(&mut fn_value,&ctx);
+    method.emmit_llvm(&mut fn_value, &ctx);
     module.verify().expect("Could not verify module!");
     module.print_to_file("target/nop.lli");
 }
@@ -26,7 +26,7 @@ fn test_add_i32() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("add_i32", fn_type, None);
-    method.emmit_llvm(&mut fn_value,&ctx);
+    method.emmit_llvm(&mut fn_value, &ctx);
     module.verify().expect("Could not verify module!");
     module.print_to_file("target/nop.lli");
 }
@@ -77,7 +77,7 @@ fn test_mag_2_f32() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("mag_2", fn_type, None);
-    method.emmit_llvm(&mut fn_value,&ctx);
+    method.emmit_llvm(&mut fn_value, &ctx);
     module.verify().expect("Could not verify module!");
     module.print_to_file("target/nop.lli");
 }
@@ -86,23 +86,23 @@ fn test_abs() {
     let args: [Type; 1] = [Type::I32];
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [
-        OpKind::LDArg(0),//0
-        OpKind::LDCI32(0),//1
-        OpKind::BGE(6),//2 -> |3,6|
+        OpKind::LDArg(0),  //0
+        OpKind::LDCI32(0), //1
+        OpKind::BGE(6),    //2 -> |3,6|
         // a < 0
-        OpKind::LDArg(0),//3
-        OpKind::Neg,//4
-        OpKind::Ret,//5
+        OpKind::LDArg(0), //3
+        OpKind::Neg,      //4
+        OpKind::Ret,      //5
         // a > 0
-        OpKind::LDArg(0),//6
-        OpKind::Ret,//7
+        OpKind::LDArg(0), //6
+        OpKind::Ret,      //7
     ];
     let method = Method::from_ops(sig, &ops).expect("Could not compile method `Abs`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("abs", fn_type, None);
-    method.emmit_llvm(&mut fn_value,&ctx);
+    method.emmit_llvm(&mut fn_value, &ctx);
     module.verify().expect("Could not verify module!");
     module.print_to_file("target/nop.lli");
 }
