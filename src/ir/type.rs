@@ -1,3 +1,6 @@
+use inkwell::types::{BasicTypeEnum,FunctionType,BasicType,VoidType,BasicMetadataTypeEnum};
+use inkwell::context::Context;
+use inkwell::types::AnyTypeEnum;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Type {
     Void,
@@ -24,6 +27,15 @@ impl Type {
             Self::I16 | Self::I8 => Self::I32,
             Self::U16 | Self::U8 => Self::U32,
             _ => todo!("Type promotion for arithmetic operations on type {self:?} unhanded!"),
+        }
+    }
+    pub(crate) fn into_llvm_type<'a>(&self,ctx:&'a Context)-> AnyTypeEnum<'a>{
+        match self{
+            Type::Void=> inkwell::types::AnyTypeEnum::VoidType(ctx.void_type()),
+            Type::I32=> inkwell::types::AnyTypeEnum::IntType(ctx.i32_type()),
+            Type::U32=> inkwell::types::AnyTypeEnum::IntType(ctx.i32_type()),
+            Type::F32=> inkwell::types::AnyTypeEnum::FloatType(ctx.f32_type()),
+            _=>todo!("Can't convert type {self:?} to llvm type!"),
         }
     }
 }

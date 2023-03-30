@@ -1,5 +1,8 @@
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, MethodIRError, Signature, StackState};
+use inkwell::builder::Builder;
+use inkwell::context::Context;
+use inkwell::values::InstructionValue;
 #[derive(Clone, Copy, Debug)]
 pub enum OpKind {
     Add,
@@ -63,6 +66,9 @@ impl Op {
             kind: kind,
             resolved_type: None,
         }
+    }
+    pub(crate) fn resolved_type(&self)->Option<Type>{
+        self.resolved_type
     }
     pub(crate) fn kind(&self) -> OpKind {
         self.kind
@@ -147,3 +153,5 @@ impl Op {
         Ok(())
     }
 }
+use inkwell::values::AnyValueEnum;
+use inkwell::basic_block::BasicBlock;
