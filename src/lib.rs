@@ -1,6 +1,7 @@
 mod ir;
 use crate::ir::{method::Method, op::OpKind, r#type::Type};
 use inkwell::context::Context;
+use crate::method_compiler::MethodCompiler;
 use ir::*;
 #[test]
 fn test_nop() {
@@ -12,9 +13,9 @@ fn test_nop() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("nop", fn_type, None);
-    method.emmit_llvm(&mut fn_value, &ctx);
-    module.verify().expect("Could not verify module!");
+    let mc = MethodCompiler::new(&ctx,&fn_value,&method);
     module.print_to_file("target/nop.lli");
+    module.verify().expect("Could not verify module!");
 }
 #[test]
 fn test_add_i32() {
@@ -26,9 +27,9 @@ fn test_add_i32() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("add_i32", fn_type, None);
-    method.emmit_llvm(&mut fn_value, &ctx);
+    let mc = MethodCompiler::new(&ctx,&fn_value,&method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/nop.lli");
+    module.print_to_file("target/add_i32.lli");
 }
 #[test]
 fn test_wrong_return() {
@@ -77,9 +78,9 @@ fn test_mag_2_f32() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("mag_2", fn_type, None);
-    method.emmit_llvm(&mut fn_value, &ctx);
+    let mc = MethodCompiler::new(&ctx,&fn_value,&method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/nop.lli");
+    module.print_to_file("target/mag_2.lli");
 }
 #[test]
 fn test_abs() {
@@ -102,9 +103,9 @@ fn test_abs() {
     let module = ctx.create_module("my_mod");
     let fn_type = method.into_fn_type(&ctx);
     let mut fn_value = module.add_function("abs", fn_type, None);
-    method.emmit_llvm(&mut fn_value, &ctx);
+    let mc = MethodCompiler::new(&ctx,&fn_value,&method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/nop.lli");
+    module.print_to_file("target/abs.lli");
 }
 /*
 #[test]

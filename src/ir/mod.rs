@@ -2,11 +2,13 @@ pub mod method;
 pub mod op;
 pub mod op_block;
 pub mod r#type;
+pub(crate) mod method_compiler;
 use inkwell::context::Context;
 use inkwell::types::BasicType;
 use inkwell::types::BasicTypeEnum;
 use inkwell::types::FunctionType;
-use op_block::OpBlock;
+pub(crate) use op_block::OpBlock;
+pub(crate) use op::OpKind;
 use r#type::Type;
 #[derive(Debug)]
 pub enum MethodIRError {

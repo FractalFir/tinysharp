@@ -8,7 +8,7 @@ use inkwell::builder::Builder;
 use inkwell::context::Context;
 #[derive(Debug, Clone)]
 pub(crate) struct OpBlock {
-    block: VOp,
+    pub(crate) block: VOp,
     state_change: Option<StackState>,
     link_out: BlockLink,
     block_beg: InstructionIndex,
@@ -93,6 +93,7 @@ impl OpBlock {
         }
     }
 }
+
 use inkwell::values::InstructionValue;
 pub(crate) struct VirtStack {
     state: Vec<usize>,

@@ -10,7 +10,7 @@ use inkwell::values::FunctionValue;
 #[derive(Debug)]
 pub(crate) struct Method {
     signature: Signature,
-    blocks: VBlocks,
+    pub(crate) blocks: VBlocks,
 }
 fn spilt_into_blocks(ops: &[OpKind]) -> VBlocks {
     //nothing to do for now!
@@ -101,6 +101,7 @@ impl Method {
         res.resolve()?;
         Ok(res)
     }
+    /*
     pub fn emmit_llvm(&self, function: &mut FunctionValue, ctx: &Context) {
         let mut llvm_blocks = Vec::new();
         for block in self.blocks.iter() {
@@ -114,7 +115,7 @@ impl Method {
         if !function.verify(true) {
             panic!("Function invalid!\n{function:?}\n");
         };
-    }
+    }*/
     pub(crate) fn into_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
         self.signature.into_fn_type(ctx)
     }
