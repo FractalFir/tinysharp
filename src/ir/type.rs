@@ -38,4 +38,13 @@ impl Type {
             _ => todo!("Can't convert type {self:?} to llvm type!"),
         }
     }
+    pub(crate) fn into_llvm_basic_type<'a>(&self, ctx: &'a Context) -> Option<BasicTypeEnum<'a>> {
+        match self {
+            Type::Void => None,
+            Type::I32 => Some(BasicTypeEnum::IntType(ctx.i32_type())),
+            Type::U32 => Some(BasicTypeEnum::IntType(ctx.i32_type())),
+            Type::F32 => Some(BasicTypeEnum::FloatType(ctx.f32_type())),
+            _ => todo!("Can't convert type {self:?} to llvm type!"),
+        }
+    }
 }

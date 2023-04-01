@@ -11,6 +11,7 @@ use inkwell::values::FunctionValue;
 pub(crate) struct Method {
     signature: Signature,
     pub(crate) blocks: VBlocks,
+    pub(crate) locals: Vec<Type>,
 }
 fn spilt_into_blocks(ops: &[OpKind]) -> VBlocks {
     //nothing to do for now!
@@ -43,7 +44,10 @@ fn spilt_into_blocks(ops: &[OpKind]) -> VBlocks {
     blocks
 }
 impl Method {
-    fn get_index_of_block_beginig_at(&self, index: InstructionIndex) -> usize {
+    pub(crate) fn get_arg_count(&self) -> usize {
+        self.signature.argc()
+    }
+    pub(crate) fn get_index_of_block_beginig_at(&self, index: InstructionIndex) -> usize {
         for block_index in 0..self.blocks.len() {
             if self.blocks[block_index].block_beg() == index {
                 return block_index;
@@ -51,12 +55,18 @@ impl Method {
         }
         panic!("No block begins at instruction with index {index}!");
     }
+    pub(crate) fn get_local_type(&self,index:usize)->Type{
+        self.locals[index]
+    }
     fn resolve_node(
         &mut self,
         index: usize,
         parrent_state: StackState,
     ) -> Result<(), MethodIRError> {
-        self.blocks[index].resolve(parrent_state, &mut self.signature)?;
+        if self.blocks[index].is_resolved() {
+            return Ok(());
+        }
+        self.blocks[index].resolve(parrent_state, &self.signature, &self.locals)?;
         let link = self.blocks[index].link_out();
         match link {
             BlockLink::Return => Ok(()),
@@ -72,6 +82,7 @@ impl Method {
             }
             BlockLink::Branch(default, target) => {
                 let def_index = self.get_index_of_block_beginig_at(default);
+                assert_ne!(def_index, index, "Default branch target loops");
                 self.resolve_node(
                     def_index,
                     self.blocks[index]
@@ -79,6 +90,7 @@ impl Method {
                         .expect("State did not resolve, but no error raised!"),
                 )?;
                 let target_index = self.get_index_of_block_beginig_at(target);
+                assert_ne!(target_index, index, "Target branch loops");
                 self.resolve_node(
                     target_index,
                     self.blocks[index]
@@ -92,31 +104,24 @@ impl Method {
     fn resolve(&mut self) -> Result<(), MethodIRError> {
         self.resolve_node(0, StackState::default())
     }
-    pub(crate) fn from_ops(sig: (&[Type], Type), ops: &[OpKind]) -> Result<Self, MethodIRError> {
+    pub(crate) fn from_ops(
+        sig: (&[Type], Type),
+        ops: &[OpKind],
+        locals: &[Type],
+    ) -> Result<Self, MethodIRError> {
         let blocks: VBlocks = spilt_into_blocks(ops);
         let mut res = Self {
             blocks,
             signature: Signature::new(sig),
+            locals: locals.into(),
         };
         res.resolve()?;
         Ok(res)
     }
-    /*
-    pub fn emmit_llvm(&self, function: &mut FunctionValue, ctx: &Context) {
-        let mut llvm_blocks = Vec::new();
-        for block in self.blocks.iter() {
-            llvm_blocks.push(ctx.append_basic_block(*function, "a"));
-        }
-        let mut block_builder = ctx.create_builder();
-        for index in 0..self.blocks.len() {
-            let _ = block_builder.position_at_end(llvm_blocks[index]);
-            self.blocks[index].into_llvm_bb(self, &mut block_builder, &ctx);
-        }
-        if !function.verify(true) {
-            panic!("Function invalid!\n{function:?}\n");
-        };
-    }*/
     pub(crate) fn into_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
         self.signature.into_fn_type(ctx)
+    }
+    pub(crate) fn signature(&self) -> &Signature {
+        &self.signature
     }
 }

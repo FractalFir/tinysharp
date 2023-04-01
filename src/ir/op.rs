@@ -1,5 +1,6 @@
 use super::r#type::Type;
-use super::{ArgIndex, InstructionIndex, MethodIRError, Signature, StackState};
+use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
+use crate::Method;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::values::InstructionValue;
@@ -8,6 +9,8 @@ pub enum OpKind {
     Add,
     And,
     BGE(InstructionIndex), //Branch if greater or equal
+    BLE(InstructionIndex), //Branch if less or equal
+    BR(InstructionIndex),  //Unconditional branch.
     Div,
     Dup,
     LDCI32(i32), //Load const i32
@@ -22,6 +25,8 @@ pub enum OpKind {
     Rem,
     Sub,
     XOr,
+    LDLoc(LocalVarIndex),
+    STLoc(LocalVarIndex),
 }
 impl OpKind {
     /// If instruction may branch, return it's target.
@@ -42,8 +47,10 @@ impl OpKind {
             | Self::Pop
             | Self::Rem
             | Self::Sub
+            | Self::LDLoc(_)
+            | Self::STLoc(_)
             | Self::XOr => None,
-            Self::BGE(target) => Some(*target),
+            Self::BGE(target) | Self::BLE(target) | Self::BR(target) => Some(*target),
         }
     }
 }
@@ -77,6 +84,7 @@ impl Op {
         &mut self,
         state: &mut StackState,
         sig: &Signature,
+        locals: &[Type],
     ) -> Result<(), MethodIRError> {
         match self.kind {
             OpKind::Nop => {
@@ -143,11 +151,26 @@ impl Op {
                 self.resolved_type = Some(a);
                 state.push(a);
             } //_ => todo!("OpKind {self:?} does not support resolving yet!"),
-            OpKind::BGE(_) => {
+            OpKind::BGE(_) | OpKind::BLE(_) => {
                 let a = state.pop().unwrap();
                 let b = state.pop().unwrap();
                 let op_res = get_op_type(a, b)?;
                 self.resolved_type = Some(op_res);
+            }
+            OpKind::BR(_) => self.resolved_type = Some(Type::Void),
+            OpKind::LDLoc(index) => {
+                let loc_type = locals[index];
+                state.push(loc_type);
+            }
+            OpKind::STLoc(index) => {
+                let s_type = state.pop().unwrap();
+                if s_type != locals[index] {
+                    return Err(MethodIRError::LocalVarTypeMismatch(
+                        s_type,
+                        locals[index],
+                        index,
+                    ));
+                }
             }
         }
         Ok(())

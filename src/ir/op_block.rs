@@ -18,9 +18,10 @@ impl OpBlock {
         &mut self,
         mut state: StackState,
         sig: &Signature,
+        locals: &[Type],
     ) -> Result<(), MethodIRError> {
         for mut op in &mut self.block {
-            op.resolve(&mut state, sig)?;
+            op.resolve(&mut state, sig, locals)?;
         }
         self.state_change = Some(state);
         Ok(())

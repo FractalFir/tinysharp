@@ -1,19 +1,20 @@
 pub mod method;
+pub(crate) mod method_compiler;
 pub mod op;
 pub mod op_block;
 pub mod r#type;
-pub(crate) mod method_compiler;
 use inkwell::context::Context;
 use inkwell::types::BasicType;
 use inkwell::types::BasicTypeEnum;
 use inkwell::types::FunctionType;
-pub(crate) use op_block::OpBlock;
 pub(crate) use op::OpKind;
+pub(crate) use op_block::OpBlock;
 use r#type::Type;
 #[derive(Debug)]
 pub enum MethodIRError {
     WrongReturnType { expected: Type, got: Type },
     OpOnMismatchedTypes(Type, Type),
+    LocalVarTypeMismatch(Type, Type, usize),
 }
 pub type VType = Vec<Type>;
 pub type SigType<'a> = (&'a [Type], Type);
@@ -21,6 +22,7 @@ pub(crate) type VOp = Vec<op::Op>;
 pub(crate) type VBlocks = Vec<OpBlock>;
 pub type ArgIndex = usize;
 pub type InstructionIndex = usize;
+pub type LocalVarIndex = usize;
 #[derive(Debug, Clone)]
 pub(crate) struct StackState {
     ///Innit state on beginning of block
@@ -58,6 +60,9 @@ impl Signature {
             args: src.0.into(),
             ret: src.1,
         }
+    }
+    pub(crate) fn argc(&self) -> usize {
+        self.args.len()
     }
     pub(crate) fn into_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
         let mut args = Vec::new();
