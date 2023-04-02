@@ -3,7 +3,7 @@ use crate::ir::{method::Method, op::OpKind, r#type::Type};
 use crate::method_compiler::MethodCompiler;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
-use ir::*;
+use ir::{MethodIRError, method_compiler};
 #[test]
 fn test_nop() {
     let args: [Type; 0] = [];
@@ -12,10 +12,12 @@ fn test_nop() {
     let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Nop`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("nop", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
-    module.print_to_file("target/nop.lli");
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("nop", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    module
+        .print_to_file("target/nop.lli")
+        .expect("Could not write module to file!");
     module.verify().expect("Could not verify module!");
 }
 #[test]
@@ -26,11 +28,13 @@ fn test_add_i32() {
     let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile  method  `Add`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("add_i32", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("add_i32", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/add_i32.lli");
+    module
+        .print_to_file("target/add_i32.lli")
+        .expect("Could not write module to file!");
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
         .unwrap();
@@ -86,11 +90,13 @@ fn test_mag_2_f32() {
     let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Mag2`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("mag_2", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("mag_2", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/mag_2.lli");
+    module
+        .print_to_file("target/mag_2.lli")
+        .expect("Could not write module to file!");
 }
 #[test]
 fn test_abs() {
@@ -111,20 +117,22 @@ fn test_abs() {
     let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Abs`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("abs", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("abs", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/abs.lli");
-     let execution_engine = module
+    module
+        .print_to_file("target/abs.lli")
+        .expect("Could not write module to file!");
+    let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
     unsafe {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("abs")
             .unwrap();
-        assert_eq!(f.call(8),8);
-        assert_eq!(f.call(-8),8);
+        assert_eq!(f.call(8), 8);
+        assert_eq!(f.call(-8), 8);
     }
 }
 #[test]
@@ -139,20 +147,22 @@ fn test_neg() {
     let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Abs`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("neg", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("neg", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
     module.verify().expect("Could not verify module!");
-    module.print_to_file("target/abs.lli");
-     let execution_engine = module
+    module
+        .print_to_file("target/abs.lli")
+        .expect("Could not write module to file!");
+    let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
     unsafe {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("neg")
             .unwrap();
-        assert_eq!(f.call(8),-8);
-        assert_eq!(f.call(-8),8);
+        assert_eq!(f.call(8), -8);
+        assert_eq!(f.call(-8), 8);
     }
 }
 
@@ -161,20 +171,20 @@ fn test_factorial() {
     let args: [Type; 1] = [Type::I32];
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [
-        OpKind::LDCI32(0), //0
+        OpKind::LDCI32(1), //0
         OpKind::STLoc(0),  //1
         OpKind::LDCI32(1), //2
         OpKind::STLoc(1),  //3
-        OpKind::BR(13),     //4
+        OpKind::BR(13),    //4
         //Loop body
-        OpKind::LDLoc(0), //5
-        OpKind::LDLoc(1), //6
-        OpKind::Mul,      //7
-        OpKind::STLoc(1), //8
-        OpKind::LDLoc(1), // 9
+        OpKind::LDLoc(0),  //5
+        OpKind::LDLoc(1),  //6
+        OpKind::Mul,       //7
+        OpKind::STLoc(0),  //8
+        OpKind::LDLoc(1),  // 9
         OpKind::LDCI32(1), //10
-        OpKind::Add, //11
-        OpKind::STLoc(1), //12
+        OpKind::Add,       //11
+        OpKind::STLoc(1),  //12
         //Loop head
         OpKind::LDLoc(1), //13
         OpKind::LDArg(0), //14
@@ -187,10 +197,12 @@ fn test_factorial() {
         .expect("Could not compile method `Factorial`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
-    let fn_type = method.into_fn_type(&ctx);
-    let mut fn_value = module.add_function("factorial", fn_type, None);
-    let mc = MethodCompiler::new(&ctx, &fn_value, &method);
-    module.print_to_file("target/factorial.lli");
+    let fn_type = method.as_fn_type(&ctx);
+    let fn_value = module.add_function("factorial", fn_type, None);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    module
+        .print_to_file("target/factorial.lli")
+        .expect("Could not write module to file!");
     module.verify().expect("Could not verify module!");
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -199,6 +211,14 @@ fn test_factorial() {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("factorial")
             .unwrap();
-        assert_eq!(f.call(8),40320);
+        for i in 0..50 {
+            println!("Factorial {i} = {}", f.call(i));
+        }
+        assert_eq!(f.call(1), 1, "Factorial 1");
+        assert_eq!(f.call(2), 2, "Factorial 2");
+        assert_eq!(f.call(3), 2 * 3, "Factorial 3");
+        assert_eq!(f.call(4), 2 * 3 * 4, "Factorial 4");
+        assert_eq!(f.call(5), 2 * 3 * 4 * 5, "Factorial 5");
+        assert_eq!(f.call(6), 2 * 3 * 4 * 5 * 6, "Factorial 6");
     }
 }

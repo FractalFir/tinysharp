@@ -1,9 +1,6 @@
+#![allow(dead_code)]
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
-use crate::Method;
-use inkwell::builder::Builder;
-use inkwell::context::Context;
-use inkwell::values::InstructionValue;
 #[derive(Clone, Copy, Debug)]
 pub enum OpKind {
     Add,
@@ -70,7 +67,7 @@ pub(crate) struct Op {
 impl Op {
     pub(crate) fn from_kind(kind: OpKind) -> Self {
         Self {
-            kind: kind,
+            kind,
             resolved_type: None,
         }
     }
@@ -116,7 +113,7 @@ impl Op {
                 let b = state.pop().unwrap();
                 let op_res = get_op_type(a, b)?;
                 self.resolved_type = Some(op_res);
-                //TODO: op_res.is_arithmetic()
+                assert!(op_res.is_arthmetic());
                 state.push(op_res);
             }
             // Bool-aplicable
@@ -176,5 +173,3 @@ impl Op {
         Ok(())
     }
 }
-use inkwell::basic_block::BasicBlock;
-use inkwell::values::AnyValueEnum;

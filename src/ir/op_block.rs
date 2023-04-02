@@ -1,11 +1,6 @@
 use super::r#type::Type;
-use super::{
-    method::Method, op::OpKind, BlockLink, InstructionIndex, MethodIRError, Signature, StackState,
-    VOp,
-};
-use inkwell::basic_block::BasicBlock;
-use inkwell::builder::Builder;
-use inkwell::context::Context;
+use super::{op::OpKind, BlockLink, InstructionIndex, MethodIRError, Signature, StackState, VOp};
+
 #[derive(Debug, Clone)]
 pub(crate) struct OpBlock {
     pub(crate) block: VOp,
@@ -20,7 +15,7 @@ impl OpBlock {
         sig: &Signature,
         locals: &[Type],
     ) -> Result<(), MethodIRError> {
-        for mut op in &mut self.block {
+        for op in &mut self.block {
             op.resolve(&mut state, sig, locals)?;
         }
         self.state_change = Some(state);
@@ -57,56 +52,5 @@ impl OpBlock {
             block: ops,
             block_beg,
         }
-    }
-    pub(crate) fn into_llvm_bb(&self, meth: &Method, block_builder: &mut Builder, ctx: &Context) {
-        assert!(
-            self.state_change
-                .clone()
-                .expect("Can't convert unresolved block to LLVM IR")
-                .is_empty(),
-            "Cross-Block Virtual stack is not supported yet"
-        );
-        //Current approach does not work for inserting things onto virtual stack and needs to be reworked.
-        let mut vstack = VirtStack::empty();
-        let mut vars: Vec<InstructionValue> = Vec::new();
-
-        use inkwell::values::AnyValue;
-        use inkwell::values::BasicValueEnum;
-        for op in &self.block {
-            match op.kind() {
-                OpKind::Ret => {
-                    let ret = op
-                        .resolved_type()
-                        .expect("Unresolved type during code gen.");
-                    if let Type::Void = ret {
-                        block_builder.build_return(None);
-                    } else {
-                        let top_any = (&vars[vstack.pop().expect("Noting to return on stack!")])
-                            .as_any_value_enum();
-                        let top: BasicValueEnum = top_any
-                            .try_into()
-                            .expect("Nonreturnable value on the stack!");
-                        block_builder.build_return(Some(&top));
-                    }
-                }
-                _ => todo!("Codegen does not support {:?}!", op.kind()),
-            }
-        }
-    }
-}
-
-use inkwell::values::InstructionValue;
-pub(crate) struct VirtStack {
-    state: Vec<usize>,
-}
-impl VirtStack {
-    pub(crate) fn empty() -> Self {
-        Self { state: Vec::new() }
-    }
-    fn pop(&mut self) -> Option<usize> {
-        self.state.pop()
-    }
-    fn push(&mut self, val: usize) {
-        self.state.push(val)
     }
 }
