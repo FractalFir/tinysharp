@@ -3,7 +3,22 @@ use crate::ir::{method::Method, op::OpKind, r#type::Type};
 use crate::method_compiler::MethodCompiler;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
+use inkwell::module::Module;
 use ir::{MethodIRError, method_compiler};
+fn opt_module(module:&Module){
+    use inkwell::passes::PassManager;
+    let pass_manager:PassManager<Module> = PassManager::create(());
+    pass_manager.add_instruction_combining_pass();
+    pass_manager.add_instruction_simplify_pass();
+    //pass_manager.add_correlated_value_propagation_pass();
+    //pass_manager.add_basic_alias_analysis_pass();
+    pass_manager.add_reassociate_pass();
+    pass_manager.add_licm_pass();
+    for i in 0..20{
+        println!("{}'th pass",i+1);
+        if !pass_manager.run_on(&module){break;}
+    }
+}
 #[test]
 fn test_nop() {
     let args: [Type; 0] = [];
@@ -19,6 +34,10 @@ fn test_nop() {
         .print_to_file("target/nop.lli")
         .expect("Could not write module to file!");
     module.verify().expect("Could not verify module!");
+    opt_module(&module);
+    module
+        .print_to_file("target/opt_nop.lli")
+        .expect("Could not write module to file!");
 }
 #[test]
 fn test_add_i32() {
@@ -34,6 +53,10 @@ fn test_add_i32() {
     module.verify().expect("Could not verify module!");
     module
         .print_to_file("target/add_i32.lli")
+        .expect("Could not write module to file!");
+    opt_module(&module);
+    module
+        .print_to_file("target/opt_add_i32.lli")
         .expect("Could not write module to file!");
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::None)
@@ -97,6 +120,10 @@ fn test_mag_2_f32() {
     module
         .print_to_file("target/mag_2.lli")
         .expect("Could not write module to file!");
+    opt_module(&module);
+    module
+        .print_to_file("target/opt_mag_2.lli")
+        .expect("Could not write module to file!");
 }
 #[test]
 fn test_abs() {
@@ -124,6 +151,10 @@ fn test_abs() {
     module
         .print_to_file("target/abs.lli")
         .expect("Could not write module to file!");
+    //opt_module(&module);
+    module
+        .print_to_file("target/opt_abs.lli")
+        .expect("Could not write module to file!");
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
@@ -131,41 +162,14 @@ fn test_abs() {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("abs")
             .unwrap();
+        for i in -10..10{
+            println!("abs({i}) = {}",f.call(i));
+        }
         assert_eq!(f.call(8), 8);
         assert_eq!(f.call(-8), 8);
+        
     }
 }
-#[test]
-fn test_neg() {
-    let args: [Type; 1] = [Type::I32];
-    let sig: (&[Type], Type) = (&args, Type::I32);
-    let ops = [
-        OpKind::LDArg(0), //3
-        OpKind::Neg,      //4
-        OpKind::Ret,      //5
-    ];
-    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Abs`");
-    let ctx = Context::create();
-    let module = ctx.create_module("my_mod");
-    let fn_type = method.as_fn_type(&ctx);
-    let fn_value = module.add_function("neg", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
-    module.verify().expect("Could not verify module!");
-    module
-        .print_to_file("target/abs.lli")
-        .expect("Could not write module to file!");
-    let execution_engine = module
-        .create_jit_execution_engine(OptimizationLevel::Aggressive)
-        .unwrap();
-    unsafe {
-        let f = execution_engine
-            .get_function::<unsafe extern "C" fn(i32) -> i32>("neg")
-            .unwrap();
-        assert_eq!(f.call(8), -8);
-        assert_eq!(f.call(-8), 8);
-    }
-}
-
 #[test]
 fn test_factorial() {
     let args: [Type; 1] = [Type::I32];
@@ -190,7 +194,7 @@ fn test_factorial() {
         OpKind::LDArg(0), //14
         OpKind::BLE(5),   //15
         //End loop
-        OpKind::LDLoc(1), //15
+        OpKind::LDLoc(0), //15
         OpKind::Ret,      //16
     ];
     let method = Method::from_ops(sig, &ops, &[Type::I32, Type::I32])
@@ -204,6 +208,10 @@ fn test_factorial() {
         .print_to_file("target/factorial.lli")
         .expect("Could not write module to file!");
     module.verify().expect("Could not verify module!");
+    opt_module(&module);
+    module
+        .print_to_file("target/opt_factorial.lli")
+        .expect("Could not write module to file!");
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
@@ -211,8 +219,8 @@ fn test_factorial() {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("factorial")
             .unwrap();
-        for i in 0..50 {
-            println!("Factorial {i} = {}", f.call(i));
+        for i in 1..10{
+            println!("factorial({i}) = {}",f.call(i));
         }
         assert_eq!(f.call(1), 1, "Factorial 1");
         assert_eq!(f.call(2), 2, "Factorial 2");

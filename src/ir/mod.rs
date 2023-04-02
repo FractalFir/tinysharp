@@ -82,3 +82,5 @@ pub(crate) enum BlockLink {
     Branch(InstructionIndex, InstructionIndex),
     Pass, //Passes to the next instruction normaly
 }
+#[cfg(test)]
+mod op_test;

@@ -24,6 +24,12 @@ impl CMPType {
             Self::LE => IntPredicate::SLE,
         }
     }
+    fn uint_cmp(&self) -> IntPredicate {
+        match self {
+            Self::GE => IntPredicate::UGE,
+            Self::LE => IntPredicate::ULE,
+        }
+    }
     //fn sint_cmp(&self)
     fn float_cmp(&self) -> FloatPredicate {
         match self {
@@ -34,12 +40,27 @@ impl CMPType {
 }
 enum Variable<'a> {
     Int(IntValue<'a>),
+    UInt(IntValue<'a>),
     Float(FloatValue<'a>),
     Pointer(PointerValue<'a>),
 }
 impl<'a> Variable<'a> {
     pub fn as_int(&self) -> Option<IntValue<'a>> {
         if let Self::Int(int) = self {
+            Some(*int)
+        } else {
+            None
+        }
+    }
+    pub fn as_any_int(&self) -> Option<IntValue<'a>> {
+        if let Self::Int(int) | Self::UInt(int) = self {
+            Some(*int)
+        } else {
+            None
+        }
+    }
+    pub fn as_uint(&self) -> Option<IntValue<'a>> {
+        if let Self::UInt(int) = self {
             Some(*int)
         } else {
             None
@@ -52,6 +73,13 @@ impl<'a> Variable<'a> {
             None
         }
     }
+    pub fn matching_int(&self,val:IntValue<'a>)->Self{
+        match self{
+            Self::Int(_)=>Self::Int(val),
+            Self::UInt(_)=>Self::UInt(val),
+            _=>panic!("Variable {val} is not an integer!"),
+        }
+    }
     pub fn from_bve(bve: BasicValueEnum<'a>) -> Self {
         match bve {
             BasicValueEnum::IntValue(int) => Self::Int(int),
@@ -62,7 +90,7 @@ impl<'a> Variable<'a> {
     }
     pub fn as_bve(&self) -> BasicValueEnum<'a> {
         match self {
-            Self::Int(var) => var.as_basic_value_enum(),
+            Self::Int(var) | Self::UInt(var) => var.as_basic_value_enum(),
             Self::Float(var) => var.as_basic_value_enum(),
             Self::Pointer(var) => var.as_basic_value_enum(),
         }
@@ -101,11 +129,11 @@ impl<'a> MethodCompiler<'a> {
         let var_a = &self.variables[index_a];
         let var_b = &self.variables[index_b];
         match var_a {
-            Variable::Int(var_a) => {
-                let var_b = var_b.as_int()?;
-                let var_a = *var_a;
-                let res = self.builder.build_int_add(var_a, var_b, "");
-                self.variables.push(Variable::Int(res));
+            Variable::UInt(int_a) | Variable::Int(int_a) => {
+                let int_b = var_b.as_any_int()?;
+                let int_a = *int_a;
+                let res = self.builder.build_int_add(int_a, int_b, "");
+                self.variables.push(var_a.matching_int(res));
                 Some(self.variables.len() - 1)
             }
             Variable::Float(var_a) => {
@@ -116,6 +144,70 @@ impl<'a> MethodCompiler<'a> {
                 Some(self.variables.len() - 1)
             }
             Variable::Pointer(_) => todo!("Adding pointers unsupported!"),
+        }
+    }
+    pub(crate) fn build_or(&mut self, index_a: usize, index_b: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        let var_b = &self.variables[index_b];
+        match var_a {
+            Variable::UInt(int_a) | Variable::Int(int_a) => {
+                let int_b = var_b.as_any_int()?;
+                let int_a = *int_a;
+                let res = self.builder.build_or(int_a, int_b, "");
+                self.variables.push(var_a.matching_int(res));
+                Some(self.variables.len() - 1)
+            },
+            Variable::Float(var_a) => panic!("Can't or 2 floats together!"),
+            Variable::Pointer(_) => todo!("Adding pointers unsupported!"),
+        }
+    }
+     pub(crate) fn build_not(&mut self, index_a: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        match var_a {
+            Variable::UInt(int_a) | Variable::Int(int_a) => {
+                let int_a = *int_a;
+                let res = self.builder.build_not(int_a, "");
+                self.variables.push(var_a.matching_int(res));
+                Some(self.variables.len() - 1)
+            },
+            Variable::Float(var_a) => panic!("Can't not a float!"),
+            Variable::Pointer(_) => todo!("Adding pointers unsupported!"),
+        }
+    }
+    pub(crate) fn build_and(&mut self, index_a: usize, index_b: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        let var_b = &self.variables[index_b];
+        match var_a {
+            Variable::UInt(int_a) | Variable::Int(int_a) => {
+                let int_b = var_b.as_any_int()?;
+                let int_a = *int_a;
+                let res = self.builder.build_and(int_a, int_b, "");
+                self.variables.push(var_a.matching_int(res));
+                Some(self.variables.len() - 1)
+            },
+            Variable::Float(var_a) => panic!("Can't and 2 floats together!"),
+            Variable::Pointer(_) => todo!("Adding pointers unsupported!"),
+        }
+    }
+    pub(crate) fn build_sub(&mut self, index_a: usize, index_b: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        let var_b = &self.variables[index_b];
+        match var_a {
+            Variable::Int(int_a) | Variable::UInt(int_a) => {
+                let var_b = var_b.as_any_int()?;
+                let int_a = *int_a;
+                let res = self.builder.build_int_sub(int_a, var_b, "");
+                self.variables.push(var_a.matching_int(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Float(var_a) => {
+                let var_b = var_b.as_float()?;
+                let var_a = *var_a;
+                let res = self.builder.build_float_sub(var_a, var_b, "");
+                self.variables.push(Variable::Float(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Pointer(_) => todo!("Subtracting pointers unsupported!"),
         }
     }
     pub(crate) fn build_neg(&mut self, index_a: usize) -> Option<usize> {
@@ -129,6 +221,7 @@ impl<'a> MethodCompiler<'a> {
                 self.variables.push(Variable::Int(res));
                 Some(self.variables.len() - 1)
             }
+            Variable::UInt(var_a) => panic!("Attempting to negate unsigned integer!"),
             Variable::Float(var_a) => {
                 let var_a = *var_a;
                 let res = self
@@ -144,6 +237,13 @@ impl<'a> MethodCompiler<'a> {
         let var_a = &self.variables[index_a];
         let var_b = &self.variables[index_b];
         match var_a {
+            Variable::UInt(var_a) => {
+                let var_b = var_b.as_uint()?;
+                let var_a = *var_a;
+                let res = self.builder.build_int_mul(var_a, var_b, "");
+                self.variables.push(Variable::UInt(res));
+                Some(self.variables.len() - 1)
+            }
             Variable::Int(var_a) => {
                 let var_b = var_b.as_int()?;
                 let var_a = *var_a;
@@ -159,6 +259,62 @@ impl<'a> MethodCompiler<'a> {
                 Some(self.variables.len() - 1)
             }
             Variable::Pointer(_) => todo!("Multiplying 2 pointers unsupported!"),
+        }
+    }
+    pub(crate) fn build_div(&mut self, index_a: usize, index_b: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        let var_b = &self.variables[index_b];
+        match var_a {
+            Variable::UInt(var_a) => {
+                let var_b = var_b.as_uint()?;
+                let var_a = *var_a;
+                let res = self.builder.build_int_unsigned_div(var_a, var_b, "");
+                self.variables.push(Variable::UInt(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Int(var_a) => {
+                let var_b = var_b.as_int()?;
+                let var_a = *var_a;
+                let res = self.builder.build_int_signed_div(var_a, var_b, "");
+                self.variables.push(Variable::Int(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Float(var_a) => {
+                let var_b = var_b.as_float()?;
+                let var_a = *var_a;
+                let res = self.builder.build_float_div(var_a, var_b, "");
+                self.variables.push(Variable::Float(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Pointer(_) => todo!("Dividing 2 pointers unsupported!"),
+        }
+    }
+    pub(crate) fn build_rem(&mut self, index_a: usize, index_b: usize) -> Option<usize> {
+        let var_a = &self.variables[index_a];
+        let var_b = &self.variables[index_b];
+        match var_a {
+            Variable::UInt(var_a) => {
+                let var_b = var_b.as_uint()?;
+                let var_a = *var_a;
+                let res = self.builder.build_int_unsigned_rem(var_a, var_b, "");
+                self.variables.push(Variable::UInt(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Int(var_a) => {
+                let var_b = var_b.as_int()?;
+                let var_a = *var_a;
+                let res = self.builder.build_int_signed_rem(var_a, var_b, "");
+                self.variables.push(Variable::Int(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Float(var_a) => {
+                let var_b = var_b.as_float()?;
+                let var_a = *var_a;
+                let res = self.builder.build_float_rem(var_a, var_b, "");
+                self.variables.push(Variable::Float(res));
+                Some(self.variables.len() - 1)
+            }
+            Variable::Pointer(_) => todo!("Geting a reminder of 2 pointers unsupported!"),
         }
     }
     fn build_cj(
@@ -177,7 +333,15 @@ impl<'a> MethodCompiler<'a> {
                 let var_a = *var_a;
                 let cmp = self
                     .builder
-                    .build_int_compare(cmp.sint_cmp(), var_b, var_a, "");
+                    .build_int_compare(cmp.sint_cmp(), var_a, var_b, "");
+                self.builder.build_conditional_branch(cmp, b_then, b_else);
+            }
+            Variable::UInt(var_a) => {
+                let var_b = var_b.as_uint()?;
+                let var_a = *var_a;
+                let cmp = self
+                    .builder
+                    .build_int_compare(cmp.uint_cmp(), var_a, var_b, "");
                 self.builder.build_conditional_branch(cmp, b_then, b_else);
             }
             Variable::Float(var_a) => {
@@ -185,8 +349,8 @@ impl<'a> MethodCompiler<'a> {
                 let var_a = *var_a;
                 let cmp = self
                     .builder
-                    .build_float_compare(cmp.float_cmp(), var_b, var_a, "");
-                self.builder.build_conditional_branch(cmp, b_then, b_else);
+                    .build_float_compare(cmp.float_cmp(), var_a, var_b, "");
+                self.builder.build_conditional_branch(cmp,b_then, b_else);
             }
             Variable::Pointer(_) => todo!("Branching using pointers unsported!"),
         }
@@ -231,14 +395,44 @@ impl<'a> MethodCompiler<'a> {
         for op in &src_block.block {
             match op.kind() {
                 OpKind::Add => {
-                    let a = virt_stack.pop()?;
                     let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
                     virt_stack.push(self.build_add(a, b)?);
                 }
-                OpKind::Mul => {
-                    let a = virt_stack.pop()?;
+                OpKind::Sub =>{
                     let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+                 
+                    virt_stack.push(self.build_sub(a, b)?);
+                }
+                OpKind::Mul => {
+                    let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
                     virt_stack.push(self.build_mul(a, b)?);
+                }
+                OpKind::And => {
+                    let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(self.build_and(a, b)?);
+                }
+                OpKind::Or => {
+                    let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(self.build_or(a, b)?);
+                }
+                OpKind::Not => {
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(self.build_not(a)?);
+                }
+                OpKind::Div => {
+                    let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(self.build_div(a, b)?);
+                }
+                OpKind::Rem => {
+                    let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(self.build_rem(a, b)?);
                 }
                 OpKind::LDArg(arg_index) => {
                     virt_stack.push(arg_index);
@@ -264,8 +458,9 @@ impl<'a> MethodCompiler<'a> {
                 OpKind::BGE(target) => {
                     let target_index = self.method.get_index_of_block_beginig_at(target);
                     let target = self.blocks[target_index];
-                    let a = virt_stack.pop()?;
                     let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
+      
                     self.build_cj(
                         a,
                         b,
@@ -277,8 +472,8 @@ impl<'a> MethodCompiler<'a> {
                 OpKind::BLE(target) => {
                     let target_index = self.method.get_index_of_block_beginig_at(target);
                     let target = self.blocks[target_index];
-                    let a = virt_stack.pop()?;
                     let b = virt_stack.pop()?;
+                    let a = virt_stack.pop()?;
                     self.build_cj(
                         a,
                         b,
@@ -299,6 +494,13 @@ impl<'a> MethodCompiler<'a> {
                 OpKind::LDLoc(index) => {
                     virt_stack.push(self.build_load_local(index)?);
                 }
+                OpKind::Dup=>{
+                    let a = virt_stack.pop()?;
+                    virt_stack.push(a);
+                    virt_stack.push(a);
+                }
+                OpKind::Pop=>{virt_stack.pop()?;},
+                OpKind::Nop=>(),
                 _ => todo!("Unsuported OpKind:{:?}", op.kind()),
             }
         }

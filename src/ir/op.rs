@@ -14,6 +14,7 @@ pub enum OpKind {
     LDArg(ArgIndex),
     LDNull,
     Nop,
+    Not,
     Neg,
     Mul,
     Or,
@@ -40,6 +41,7 @@ impl OpKind {
             | Self::LDCI32(_)
             | Self::LDNull
             | Self::Neg
+            | Self::Not
             | Self::Or
             | Self::Pop
             | Self::Rem
@@ -83,6 +85,7 @@ impl Op {
         sig: &Signature,
         locals: &[Type],
     ) -> Result<(), MethodIRError> {
+        //println!("self:{self:?} State:{state:?}");
         match self.kind {
             OpKind::Nop => {
                 //TODO:Reconsider resolving type being present for all ops. Seems kinda stupid now.
@@ -117,10 +120,16 @@ impl Op {
                 state.push(op_res);
             }
             // Bool-aplicable
-            OpKind::And | OpKind::Or | OpKind::XOr => {
+            OpKind::And | OpKind::Or | OpKind::XOr=> {
                 let a = state.pop().unwrap();
                 let b = state.pop().unwrap();
                 let op_res = get_op_type(a, b)?;
+                self.resolved_type = Some(op_res);
+                state.push(op_res);
+            }
+            OpKind::Not=> {
+                let a = state.pop().unwrap();
+                let op_res = a.arthm_promote();
                 self.resolved_type = Some(op_res);
                 state.push(op_res);
             }
