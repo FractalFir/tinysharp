@@ -1,3 +1,4 @@
+mod compile_variable;
 pub mod method;
 pub(crate) mod method_compiler;
 pub mod op;
@@ -8,6 +9,7 @@ use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionTy
 use op::OpKind;
 use op_block::OpBlock;
 use r#type::Type;
+pub(crate) mod op_compiler;
 #[derive(Debug)]
 pub enum MethodIRError {
     WrongReturnType { expected: Type, got: Type },
@@ -54,6 +56,9 @@ impl Signature {
     }
     pub(crate) fn argc(&self) -> usize {
         self.args.len()
+    }
+    pub(crate) fn args(&self) -> &[Type]{
+        &self.args
     }
     pub(crate) fn as_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
         let mut args = Vec::new();

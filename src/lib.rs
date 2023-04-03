@@ -2,21 +2,23 @@ mod ir;
 use crate::ir::{method::Method, op::OpKind, r#type::Type};
 use crate::method_compiler::MethodCompiler;
 use inkwell::context::Context;
-use inkwell::OptimizationLevel;
 use inkwell::module::Module;
-use ir::{MethodIRError, method_compiler};
-fn opt_module(module:&Module){
+use inkwell::OptimizationLevel;
+use ir::{method_compiler, MethodIRError};
+fn opt_module(module: &Module) {
     use inkwell::passes::PassManager;
-    let pass_manager:PassManager<Module> = PassManager::create(());
+    let pass_manager: PassManager<Module> = PassManager::create(());
     pass_manager.add_instruction_combining_pass();
     pass_manager.add_instruction_simplify_pass();
     //pass_manager.add_correlated_value_propagation_pass();
     //pass_manager.add_basic_alias_analysis_pass();
     pass_manager.add_reassociate_pass();
     pass_manager.add_licm_pass();
-    for i in 0..20{
-        println!("{}'th pass",i+1);
-        if !pass_manager.run_on(&module){break;}
+    for i in 0..20 {
+        println!("{}'th pass", i + 1);
+        if !pass_manager.run_on(module) {
+            break;
+        }
     }
 }
 #[test]
@@ -162,12 +164,11 @@ fn test_abs() {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("abs")
             .unwrap();
-        for i in -10..10{
-            println!("abs({i}) = {}",f.call(i));
+        for i in -10..10 {
+            println!("abs({i}) = {}", f.call(i));
         }
         assert_eq!(f.call(8), 8);
         assert_eq!(f.call(-8), 8);
-        
     }
 }
 #[test]
@@ -219,8 +220,8 @@ fn test_factorial() {
         let f = execution_engine
             .get_function::<unsafe extern "C" fn(i32) -> i32>("factorial")
             .unwrap();
-        for i in 1..10{
-            println!("factorial({i}) = {}",f.call(i));
+        for i in 1..10 {
+            println!("factorial({i}) = {}", f.call(i));
         }
         assert_eq!(f.call(1), 1, "Factorial 1");
         assert_eq!(f.call(2), 2, "Factorial 2");
