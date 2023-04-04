@@ -2,7 +2,7 @@ use crate::{Method, OpKind, Type};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::OptimizationLevel;
-fn rnd_u32() -> u32 {
+pub(crate) fn rnd_u32() -> u32 {
     unsafe {
         static mut STATE_32: u32 = 1_750_234_402;
         STATE_32 ^= STATE_32 << 13;
@@ -695,5 +695,45 @@ fn conv_u32() {
         let rust_result = a as u32;
         let csharp_result = unsafe { f.call(a) };
         assert_eq!(rust_result, csharp_result, "a as u16");
+    }
+}
+#[test]
+fn conv_i64() {
+    let args: [Type; 1] = [Type::I16];
+    let sig: (&[Type], Type) = (&args, Type::I64);
+    let ops = [OpKind::LDArg(0), OpKind::ConvI64, OpKind::Ret];
+    let ctx = Context::create();
+    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `conv_i8`");
+    let module = compile_fn(&ctx, &method);
+    let execution_engine = module
+        .create_jit_execution_engine(OptimizationLevel::Aggressive)
+        .unwrap();
+    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i16) -> i64>("f") }
+        .unwrap();
+    for _ in 0..10_000 {
+        let a = rnd_i16();
+        let rust_result = a as i64;
+        let csharp_result = unsafe { f.call(a) };
+        assert_eq!(rust_result, csharp_result, "a as i64");
+    }
+}
+#[test]
+fn conv_u64() {
+    let args: [Type; 1] = [Type::U16];
+    let sig: (&[Type], Type) = (&args, Type::U64);
+    let ops = [OpKind::LDArg(0), OpKind::ConvU64, OpKind::Ret];
+    let ctx = Context::create();
+    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `conv_u8`");
+    let module = compile_fn(&ctx, &method);
+    let execution_engine = module
+        .create_jit_execution_engine(OptimizationLevel::Aggressive)
+        .unwrap();
+    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(u16) -> u64>("f") }
+        .unwrap();
+    for _ in 0..10_000 {
+        let a = rnd_u16();
+        let rust_result = a as u64;
+        let csharp_result = unsafe { f.call(a) };
+        assert_eq!(rust_result, csharp_result, "a as u64");
     }
 }

@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use super::method_compiler::CMPType;
+use crate::jit::method_compiler::CMPType;
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
 #[derive(Clone, Copy, Debug)]
@@ -20,6 +20,8 @@ pub enum OpKind {
     ConvI16,
     ConvU32,
     ConvI32,
+    ConvU64,
+    ConvI64,
     Div,
     Dup,
     LDCI32(i32), //Load const i32
@@ -81,6 +83,8 @@ impl OpKind {
             | Self::ConvI16
             | Self::ConvU32
             | Self::ConvI32
+            | Self::ConvU64
+            | Self::ConvI64
             | Self::XOr => None,
             Self::BGE(target)
             | Self::BLE(target)
@@ -230,6 +234,16 @@ impl Op {
                 let a = state.pop().unwrap();
                 self.resolved_type = Some(Type::I32);
                 state.push(Type::I32);
+            }
+            OpKind::ConvU64 => {
+                let a = state.pop().unwrap();
+                self.resolved_type = Some(Type::U64);
+                state.push(Type::U64);
+            }
+            OpKind::ConvI64 => {
+                let a = state.pop().unwrap();
+                self.resolved_type = Some(Type::I64);
+                state.push(Type::I64);
             }
             OpKind::BR(_) => self.resolved_type = Some(Type::Void),
             OpKind::LDLoc(index) => {

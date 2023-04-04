@@ -1,10 +1,12 @@
 mod ir;
+mod jit;
+mod type_system;
 use crate::ir::{method::Method, op::OpKind, r#type::Type};
-use crate::method_compiler::MethodCompiler;
+use jit::method_compiler::MethodCompiler;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::OptimizationLevel;
-use ir::{method_compiler, MethodIRError};
+use ir::MethodIRError;
 fn opt_module(module: &Module) {
     use inkwell::passes::PassManager;
     let pass_manager: PassManager<Module> = PassManager::create(());

@@ -129,6 +129,14 @@ pub(crate) fn compile_op(
             let a = virt_stack.pop().unwrap();
             virt_stack.push(compiler.convert(a,Type::I32).unwrap());
         }
+        OpKind::ConvU64=>{
+            let a = virt_stack.pop().unwrap();
+            virt_stack.push(compiler.convert(a,Type::U64).unwrap());
+        }
+        OpKind::ConvI64=>{
+            let a = virt_stack.pop().unwrap();
+            virt_stack.push(compiler.convert(a,Type::I64).unwrap());
+        }
         _ => todo!("Unsuported OpKind:{:?}", op.kind()),
     }
     Some(())

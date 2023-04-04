@@ -1,10 +1,10 @@
 use super::compile_variable::Variable;
 use inkwell::types::IntType;
 use inkwell::values::IntValue;
-use super::r#type::Type;
-use super::BlockLink;
-use super::OpBlock;
-use super::OpKind;
+use crate::ir::r#type::Type;
+use crate::ir::BlockLink;
+use crate::ir::op_block::OpBlock;
+use crate::ir::op::OpKind;
 use crate::Method;
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
@@ -397,7 +397,7 @@ impl<'a> MethodCompiler<'a> {
         let mut virt_stack = VirtualStack::new();
         self.set_at_end_block(index);
         for op in &src_block.block {
-            use crate::ir::op_compiler::compile_op;
+            use super::op_compiler::compile_op;
             compile_op(self, op, &mut virt_stack);
         }
         if let BlockLink::Pass = src_block.link_out() {

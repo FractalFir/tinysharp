@@ -1,6 +1,4 @@
-mod compile_variable;
 pub mod method;
-pub(crate) mod method_compiler;
 pub mod op;
 pub mod op_block;
 pub mod r#type;
@@ -9,7 +7,6 @@ use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionTy
 use op::OpKind;
 use op_block::OpBlock;
 use r#type::Type;
-pub(crate) mod op_compiler;
 #[derive(Debug)]
 pub enum MethodIRError {
     WrongReturnType { expected: Type, got: Type },
@@ -42,12 +39,20 @@ impl StackState {
         self.output.is_empty()
     }*/
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub(crate) struct Signature {
     args: VType,
     ret: Type,
 }
 impl Signature {
+    pub(crate) fn to_mangle_string(&self)->String{
+        let mut res = String::new();
+        for arg in &self.args{
+            res += &arg.to_mangle_string();
+            res += "/";
+        }
+        res
+    }
     pub(crate) fn new(src: SigType) -> Self {
         Self {
             args: src.0.into(),
@@ -88,4 +93,4 @@ pub(crate) enum BlockLink {
     Pass, //Passes to the next instruction normaly
 }
 #[cfg(test)]
-mod op_test;
+pub(crate) mod op_test;

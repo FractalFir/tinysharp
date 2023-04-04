@@ -21,6 +21,23 @@ pub enum Type {
     Bool,
 }
 impl Type {
+    pub(crate) fn to_mangle_string(&self)->String{
+        match self{
+            Self::I64=>"i64".to_owned(),
+            Self::U64=>"u64".to_owned(),
+            Self::F64=>"f64".to_owned(),
+            Self::I32=>"i32".to_owned(),
+            Self::U32=>"u32".to_owned(),
+            Self::F32=>"f32".to_owned(),
+            Self::I16=>"i16".to_owned(),
+            Self::U16=>"u16".to_owned(),
+            Self::I8=>"i8".to_owned(),
+            Self::U8=>"u8".to_owned(),
+            Self::Bool=>"bool".to_owned(),
+            Self::Void=>"void".to_owned(),
+            _=>todo!("Can't create mangle string from type:{self:?}!"),
+        }
+    }
     pub(crate) fn as_int(self,ctx: &'_ Context)->Option<IntType<'_>>{
         match self{
             Type::I64 | Type::U64 => Some(ctx.i64_type()),
@@ -51,6 +68,7 @@ impl Type {
     pub(crate) fn as_llvm_type(self, ctx: &'_ Context) -> AnyTypeEnum<'_> {
         match self {
             Type::Void => inkwell::types::AnyTypeEnum::VoidType(ctx.void_type()),
+            Type::I64 | Type::U64 => inkwell::types::AnyTypeEnum::IntType(ctx.i64_type()),
             Type::I32 | Type::U32 => inkwell::types::AnyTypeEnum::IntType(ctx.i32_type()),
             Type::I16 | Type::U16 => inkwell::types::AnyTypeEnum::IntType(ctx.i16_type()),
             Type::I8 | Type::U8 => inkwell::types::AnyTypeEnum::IntType(ctx.i8_type()),
