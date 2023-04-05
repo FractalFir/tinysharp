@@ -1,5 +1,5 @@
-use inkwell::values::{BasicValue, BasicValueEnum, FloatValue, IntValue, PointerValue};
 use crate::Type;
+use inkwell::values::{BasicValue, BasicValueEnum, FloatValue, IntValue, PointerValue};
 #[derive(Clone, Copy)]
 pub(crate) enum Variable<'a> {
     Int(IntValue<'a>),
@@ -51,12 +51,12 @@ impl<'a> Variable<'a> {
             _ => todo!("Can't convert {bve:?} to a Variable IR!"),
         }
     }
-    pub fn from_bve_typed(bve: BasicValueEnum<'a>,t:&Type) -> Self {
-        match t{
-            Type::I64 | Type::I32 | Type::I16 | Type::I8=>Self::Int(bve.into_int_value()),
-            Type::U64 | Type::U32 | Type::U16 | Type::U8=>Self::UInt(bve.into_int_value()),
-            Type::F64 | Type::F32 =>Self::Float(bve.into_float_value()),
-            _=>todo!("Can't convert {bve:?} to type {t:?}"),
+    pub fn from_bve_typed(bve: BasicValueEnum<'a>, t: &Type) -> Self {
+        match t {
+            Type::I64 | Type::I32 | Type::I16 | Type::I8 => Self::Int(bve.into_int_value()),
+            Type::U64 | Type::U32 | Type::U16 | Type::U8 => Self::UInt(bve.into_int_value()),
+            Type::F64 | Type::F32 => Self::Float(bve.into_float_value()),
+            _ => todo!("Can't convert {bve:?} to type {t:?}"),
         }
     }
     pub fn as_bve(&self) -> BasicValueEnum<'a> {

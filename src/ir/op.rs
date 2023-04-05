@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use crate::jit::method_compiler::CMPType;
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
+use crate::jit::method_compiler::CMPType;
 #[derive(Clone, Copy, Debug)]
 #[allow(clippy::upper_case_acronyms, clippy::module_name_repetitions)]
 pub enum OpKind {

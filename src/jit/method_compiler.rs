@@ -1,16 +1,17 @@
 use super::compile_variable::Variable;
-use inkwell::types::IntType;
-use inkwell::values::IntValue;
+use crate::ir::op::OpKind;
+use crate::ir::op_block::OpBlock;
 use crate::ir::r#type::Type;
 use crate::ir::BlockLink;
-use crate::ir::op_block::OpBlock;
-use crate::ir::op::OpKind;
 use crate::Method;
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
+use inkwell::types::IntType;
 use inkwell::values::FunctionValue;
+use inkwell::values::IntValue;
 use inkwell::{FloatPredicate, IntPredicate};
+use super::MethodCompileError;
 fn as_u64(i: i64) -> u64 {
     unsafe { std::mem::transmute(i) }
 }
@@ -336,35 +337,40 @@ impl<'a> MethodCompiler<'a> {
             self.builder.build_return(None);
         }
     }
-    fn convert_to_int(&mut self, src_index:usize,target:IntType<'a>)->usize{
+    fn convert_to_int(&mut self, src_index: usize, target: IntType<'a>) -> usize {
         let src = self.variables[src_index];
-        match src{
-            Variable::Int(src_int)=>{
-                if src_int.get_type().get_bit_width() < target.get_bit_width(){
-                    self.variables.push(Variable::Int(self.builder.build_int_s_extend(src_int,target,"")));;
+        match src {
+            Variable::Int(src_int) => {
+                if src_int.get_type().get_bit_width() < target.get_bit_width() {
+                    self.variables.push(Variable::Int(
+                        self.builder.build_int_s_extend(src_int, target, ""),
+                    ));
+                } else {
+                    self.variables.push(Variable::Int(
+                        self.builder.build_int_truncate(src_int, target, ""),
+                    ));
                 }
-                else{
-                    self.variables.push(Variable::Int(self.builder.build_int_truncate(src_int,target,"")));
-                }
-                self.variables.len() - 1 
-            },
-            Variable::UInt(src_int)=>{
-                if src_int.get_type().get_bit_width() < target.get_bit_width(){
-                    self.variables.push(Variable::Int(self.builder.build_int_z_extend(src_int,target,"")));
-                }
-                else{
-                    self.variables.push(Variable::Int(self.builder.build_int_truncate(src_int,target,"")));
-                }
-                self.variables.len() - 1 
+                self.variables.len() - 1
             }
-            _=>panic!("Converting from anything else than signed integers is not supported!"),
+            Variable::UInt(src_int) => {
+                if src_int.get_type().get_bit_width() < target.get_bit_width() {
+                    self.variables.push(Variable::Int(
+                        self.builder.build_int_z_extend(src_int, target, ""),
+                    ));
+                } else {
+                    self.variables.push(Variable::Int(
+                        self.builder.build_int_truncate(src_int, target, ""),
+                    ));
+                }
+                self.variables.len() - 1
+            }
+            _ => panic!("Converting from anything else than signed integers is not supported!"),
         }
     }
-    pub(crate) fn convert(&mut self, src_index:usize,target:Type)->Option<usize>{
-        if(target.is_int()){
-            Some(self.convert_to_int(src_index,target.as_int(self.ctx).unwrap()))
-        }
-        else{
+    pub(crate) fn convert(&mut self, src_index: usize, target: Type) -> Option<usize> {
+        if (target.is_int()) {
+            Some(self.convert_to_int(src_index, target.as_int(self.ctx).unwrap()))
+        } else {
             panic!("Can't convert type:{target:?}");
         }
     }
@@ -407,14 +413,14 @@ impl<'a> MethodCompiler<'a> {
         }
         Some(())
     }
-    pub(crate) fn new(ctx: &'a Context, fnc: FunctionValue<'a>, method: &'a Method) -> Self {
+    pub(crate) fn new(ctx: &'a Context, fnc: FunctionValue<'a>, method: &'a Method) -> Result<Self,MethodCompileError> {
         let builder = ctx.create_builder();
         let mut blocks = Vec::new();
         let mut variables = Vec::new();
         let mut params = fnc.get_param_iter();
         for t in method.signature().args() {
             let param = params.next().expect("Argument count mismatch!");
-            variables.push(Variable::from_bve_typed(param,t));
+            variables.push(Variable::from_bve_typed(param, t));
         }
         let init_block = ctx.append_basic_block(fnc, "locals_init");
         builder.position_at_end(init_block);
@@ -439,9 +445,7 @@ impl<'a> MethodCompiler<'a> {
         for (index, block) in method.blocks.iter().enumerate() {
             res.block_ops(block, index);
         }
-        res
+        Ok(res)
     }
 }
-enum MethodCompileError{
-    NoItemOnStack,
-}
+

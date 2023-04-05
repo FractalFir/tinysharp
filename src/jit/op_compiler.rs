@@ -105,37 +105,37 @@ pub(crate) fn compile_op(
             virt_stack.pop().unwrap();
         }
         OpKind::Nop => (),
-        OpKind::ConvU8=>{
+        OpKind::ConvU8 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::U8).unwrap());
+            virt_stack.push(compiler.convert(a, Type::U8).unwrap());
         }
-        OpKind::ConvI8=>{
+        OpKind::ConvI8 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::I8).unwrap());
+            virt_stack.push(compiler.convert(a, Type::I8).unwrap());
         }
-        OpKind::ConvU16=>{
+        OpKind::ConvU16 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::U16).unwrap());
+            virt_stack.push(compiler.convert(a, Type::U16).unwrap());
         }
-        OpKind::ConvI16=>{
+        OpKind::ConvI16 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::I16).unwrap());
+            virt_stack.push(compiler.convert(a, Type::I16).unwrap());
         }
-        OpKind::ConvU32=>{
+        OpKind::ConvU32 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::U32).unwrap());
+            virt_stack.push(compiler.convert(a, Type::U32).unwrap());
         }
-        OpKind::ConvI32=>{
+        OpKind::ConvI32 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::I32).unwrap());
+            virt_stack.push(compiler.convert(a, Type::I32).unwrap());
         }
-        OpKind::ConvU64=>{
+        OpKind::ConvU64 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::U64).unwrap());
+            virt_stack.push(compiler.convert(a, Type::U64).unwrap());
         }
-        OpKind::ConvI64=>{
+        OpKind::ConvI64 => {
             let a = virt_stack.pop().unwrap();
-            virt_stack.push(compiler.convert(a,Type::I64).unwrap());
+            virt_stack.push(compiler.convert(a, Type::I64).unwrap());
         }
         _ => todo!("Unsuported OpKind:{:?}", op.kind()),
     }

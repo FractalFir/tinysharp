@@ -39,15 +39,15 @@ impl StackState {
         self.output.is_empty()
     }*/
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct Signature {
     args: VType,
     ret: Type,
 }
 impl Signature {
-    pub(crate) fn to_mangle_string(&self)->String{
+    pub(crate) fn to_mangle_string(&self) -> String {
         let mut res = String::new();
-        for arg in &self.args{
+        for arg in &self.args {
             res += &arg.to_mangle_string();
             res += "/";
         }
@@ -62,7 +62,7 @@ impl Signature {
     pub(crate) fn argc(&self) -> usize {
         self.args.len()
     }
-    pub(crate) fn args(&self) -> &[Type]{
+    pub(crate) fn args(&self) -> &[Type] {
         &self.args
     }
     pub(crate) fn as_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {

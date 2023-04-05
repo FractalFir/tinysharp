@@ -15,10 +15,10 @@ fn rnd_i32() -> i32 {
     unsafe { std::mem::transmute(rnd_u32()) }
 }
 fn rnd_i16() -> i16 {
-    unsafe { std::mem::transmute((rnd_i32()%(i16::MAX as i32)) as i16)}
+    unsafe { std::mem::transmute((rnd_i32() % (i16::MAX as i32)) as i16) }
 }
 fn rnd_u16() -> u16 {
-    (rnd_u32()%(u16::MAX as u32)) as u16
+    (rnd_u32() % (u16::MAX as u32)) as u16
 }
 fn compile_fn<'a>(ctx: &'a Context, method: &Method) -> Module<'a> {
     use crate::MethodCompiler;
@@ -26,13 +26,15 @@ fn compile_fn<'a>(ctx: &'a Context, method: &Method) -> Module<'a> {
     let fn_type = method.as_fn_type(ctx);
     let fn_value = module.add_function("f", fn_type, None);
     let _mc = MethodCompiler::new(ctx, fn_value, method);
-    match module.verify(){
-        Ok(_)=>(),
-        Err(msg)=>{
+    match module.verify() {
+        Ok(_) => (),
+        Err(msg) => {
             let rnd = rnd_u32();
             let file = format!("target/test_res{rnd}.lli");
             module.print_to_file(&file);
-            panic!("Module compilation failed with message:\n{msg}\n,dumping result to file:'{file}'");
+            panic!(
+                "Module compilation failed with message:\n{msg}\n,dumping result to file:'{file}'"
+            );
         }
     }
     module
@@ -576,12 +578,12 @@ fn conv_i8() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> i8>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> i8>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i32();
-        fn i32_to_i8(a:i32)->i8{
-            unsafe{std::mem::transmute(a.to_le_bytes()[0])}
+        fn i32_to_i8(a: i32) -> i8 {
+            unsafe { std::mem::transmute(a.to_le_bytes()[0]) }
         }
         let rust_result = i32_to_i8(a);
         let csharp_result = unsafe { f.call(a) };
@@ -599,11 +601,11 @@ fn conv_u8() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> u8>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> u8>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i32();
-        fn i32_to_u8(a:i32)->u8{
+        fn i32_to_u8(a: i32) -> u8 {
             a.to_le_bytes()[0]
         }
         let rust_result = i32_to_u8(a);
@@ -622,12 +624,14 @@ fn conv_i16() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> i16>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> i16>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i32();
-        fn i32_to_i16(a:i32)->i16{
-            unsafe{std::mem::transmute(a.to_le_bytes()[0] as u16 + (a.to_le_bytes()[1] as u16)*256)}
+        fn i32_to_i16(a: i32) -> i16 {
+            unsafe {
+                std::mem::transmute(a.to_le_bytes()[0] as u16 + (a.to_le_bytes()[1] as u16) * 256)
+            }
         }
         let rust_result = i32_to_i16(a);
         let csharp_result = unsafe { f.call(a) };
@@ -645,12 +649,12 @@ fn conv_u16() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> u16>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i32) -> u16>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i32();
-        fn i32_to_u16(a:i32)->u16{
-            a.to_le_bytes()[0] as u16 + (a.to_le_bytes()[1] as u16)*256
+        fn i32_to_u16(a: i32) -> u16 {
+            a.to_le_bytes()[0] as u16 + (a.to_le_bytes()[1] as u16) * 256
         }
         let rust_result = i32_to_u16(a);
         let csharp_result = unsafe { f.call(a) };
@@ -668,8 +672,8 @@ fn conv_i32() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i16) -> i32>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i16) -> i32>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i16();
         let rust_result = a as i32;
@@ -688,8 +692,8 @@ fn conv_u32() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(u16) -> u32>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(u16) -> u32>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_u16();
         let rust_result = a as u32;
@@ -708,8 +712,8 @@ fn conv_i64() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(i16) -> i64>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(i16) -> i64>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_i16();
         let rust_result = a as i64;
@@ -728,8 +732,8 @@ fn conv_u64() {
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
         .unwrap();
-    let f = unsafe { execution_engine.get_function::<unsafe extern "C" fn(u16) -> u64>("f") }
-        .unwrap();
+    let f =
+        unsafe { execution_engine.get_function::<unsafe extern "C" fn(u16) -> u64>("f") }.unwrap();
     for _ in 0..10_000 {
         let a = rnd_u16();
         let rust_result = a as u64;

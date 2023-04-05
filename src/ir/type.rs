@@ -1,5 +1,5 @@
 use inkwell::context::Context;
-use inkwell::types::{AnyTypeEnum, BasicTypeEnum,IntType};
+use inkwell::types::{AnyTypeEnum, BasicTypeEnum, IntType};
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum Type {
@@ -21,40 +21,40 @@ pub enum Type {
     Bool,
 }
 impl Type {
-    pub(crate) fn to_mangle_string(&self)->String{
-        match self{
-            Self::I64=>"i64".to_owned(),
-            Self::U64=>"u64".to_owned(),
-            Self::F64=>"f64".to_owned(),
-            Self::I32=>"i32".to_owned(),
-            Self::U32=>"u32".to_owned(),
-            Self::F32=>"f32".to_owned(),
-            Self::I16=>"i16".to_owned(),
-            Self::U16=>"u16".to_owned(),
-            Self::I8=>"i8".to_owned(),
-            Self::U8=>"u8".to_owned(),
-            Self::Bool=>"bool".to_owned(),
-            Self::Void=>"void".to_owned(),
-            _=>todo!("Can't create mangle string from type:{self:?}!"),
+    pub(crate) fn to_mangle_string(&self) -> String {
+        match self {
+            Self::I64 => "i64".to_owned(),
+            Self::U64 => "u64".to_owned(),
+            Self::F64 => "f64".to_owned(),
+            Self::I32 => "i32".to_owned(),
+            Self::U32 => "u32".to_owned(),
+            Self::F32 => "f32".to_owned(),
+            Self::I16 => "i16".to_owned(),
+            Self::U16 => "u16".to_owned(),
+            Self::I8 => "i8".to_owned(),
+            Self::U8 => "u8".to_owned(),
+            Self::Bool => "bool".to_owned(),
+            Self::Void => "void".to_owned(),
+            _ => todo!("Can't create mangle string from type:{self:?}!"),
         }
     }
-    pub(crate) fn as_int(self,ctx: &'_ Context)->Option<IntType<'_>>{
-        match self{
+    pub(crate) fn as_int(self, ctx: &'_ Context) -> Option<IntType<'_>> {
+        match self {
             Type::I64 | Type::U64 => Some(ctx.i64_type()),
             Type::I32 | Type::U32 => Some(ctx.i32_type()),
             Type::I16 | Type::U16 | Type::Char => Some(ctx.i16_type()),
             Type::I8 | Type::U8 => Some(ctx.i8_type()),
-            
-            _=>None,
+
+            _ => None,
         }
     }
-    pub(crate) fn is_int(self)->bool{
-        match self{
+    pub(crate) fn is_int(self) -> bool {
+        match self {
             Type::I64 | Type::U64 => true,
             Type::I32 | Type::U32 => true,
             Type::I16 | Type::U16 | Type::Char => true,
             Type::I8 | Type::U8 => true,
-            _=>false,
+            _ => false,
         }
     }
     pub(crate) fn arthm_promote(self) -> Type {

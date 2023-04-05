@@ -8,7 +8,7 @@ use inkwell::context::Context;
 use inkwell::types::FunctionType;
 
 #[derive(Debug)]
-pub(crate) struct Method {
+pub struct Method {
     signature: Signature,
     pub(crate) blocks: VBlocks,
     pub(crate) locals: Vec<Type>,
@@ -87,7 +87,7 @@ impl Method {
     fn resolve(&mut self) -> Result<(), MethodIRError> {
         self.resolve_node(0, StackState::default())
     }
-    pub(crate) fn from_ops(
+    pub fn from_ops(
         sig: (&[Type], Type),
         ops: &[OpKind],
         locals: &[Type],
