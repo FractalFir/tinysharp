@@ -1,5 +1,4 @@
 use super::compile_variable::Variable;
-use crate::ir::op::OpKind;
 use crate::ir::op_block::OpBlock;
 use crate::ir::r#type::Type;
 use crate::ir::BlockLink;
@@ -9,9 +8,10 @@ use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::types::IntType;
 use inkwell::values::FunctionValue;
-use inkwell::values::IntValue;
 use inkwell::{FloatPredicate, IntPredicate};
 use super::MethodCompileError;
+use crate::ir::Signature;
+use crate::Module;
 fn as_u64(i: i64) -> u64 {
     unsafe { std::mem::transmute(i) }
 }
@@ -61,7 +61,7 @@ pub(crate) struct MethodCompiler<'a> {
     variables: Vec<Variable<'a>>,
     blocks: Vec<BasicBlock<'a>>,
     builder: Builder<'a>,
-    // fnc: FunctionValue<'a>,
+    module:*const Module<'a>,
 }
 pub(crate) struct VirtualStack {
     state: Vec<usize>,
@@ -91,6 +91,22 @@ impl<'a> MethodCompiler<'a> {
     }
     pub(crate) fn method(&self) -> &Method {
         self.method
+    }
+    pub(crate) fn call(&mut self,name:&str,args:&[usize],sig:&Signature)->Option<usize>{
+        let call_target = unsafe{(*self.module).get_function(name).expect("Can't find method!")};
+        let mut arg_bves = Vec::with_capacity(args.len());
+        for arg in args{
+            let arg = self.variables[*arg];
+            arg_bves.push(arg.as_bve().into());
+        }
+        let res = self.builder.build_call(call_target,&arg_bves,name);
+        if *sig.ret() == Type::Void{
+            return None;
+        }
+        let res = res.try_as_basic_value().left().unwrap();
+        let res = Variable::from_bve_typed(res,sig.ret());
+        self.variables.push(res);
+        Some(self.variables.len() - 1)
     }
     fn get_local_index(&self, loc_index: usize) -> usize {
         self.method.signature().argc() + loc_index
@@ -368,7 +384,7 @@ impl<'a> MethodCompiler<'a> {
         }
     }
     pub(crate) fn convert(&mut self, src_index: usize, target: Type) -> Option<usize> {
-        if (target.is_int()) {
+        if target.is_int() {
             Some(self.convert_to_int(src_index, target.as_int(self.ctx).unwrap()))
         } else {
             panic!("Can't convert type:{target:?}");
@@ -413,7 +429,9 @@ impl<'a> MethodCompiler<'a> {
         }
         Some(())
     }
-    pub(crate) fn new(ctx: &'a Context, fnc: FunctionValue<'a>, method: &'a Method) -> Result<Self,MethodCompileError> {
+    pub(crate) fn new(ctx: &'a Context, fnc: FunctionValue<'a>, method: &'a Method,module:&Module) -> Result<(),MethodCompileError> {
+        let ptr = module as *const _ as *const ();
+        let module = ptr as * const Module<'a>;
         let builder = ctx.create_builder();
         let mut blocks = Vec::new();
         let mut variables = Vec::new();
@@ -441,11 +459,12 @@ impl<'a> MethodCompiler<'a> {
             variables,
             blocks,
             builder,
+            module,
         };
         for (index, block) in method.blocks.iter().enumerate() {
             res.block_ops(block, index);
         }
-        Ok(res)
+        Ok(())
     }
 }
 

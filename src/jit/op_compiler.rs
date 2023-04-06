@@ -1,11 +1,11 @@
-use super::compile_variable::Variable;
 use super::method_compiler::MethodCompiler;
 use super::method_compiler::VirtualStack;
 use crate::ir::op::{Op, OpKind};
 use crate::ir::r#type::Type;
+/*
 fn as_u64(i: i64) -> u64 {
     unsafe { std::mem::transmute(i) }
-}
+}*/
 pub(crate) fn compile_arthm(
     compiler: &mut MethodCompiler,
     op: &Op,
@@ -47,13 +47,13 @@ pub(crate) fn compile_op(
             virt_stack.push(compiler.not(a).unwrap());
         }
         OpKind::LDArg(arg_index) => {
-            virt_stack.push(arg_index);
+            virt_stack.push(*arg_index);
         }
         OpKind::LDCI32(val) => {
-            virt_stack.push(compiler.add_const_i32(val));
+            virt_stack.push(compiler.add_const_i32(*val));
         }
         OpKind::Ret => {
-            if op.resolved_type().unwrap() == Type::Void {
+            if *op.resolved_type().unwrap() == Type::Void {
                 compiler.ret(None);
             } else {
                 let ret = virt_stack.pop().unwrap();
@@ -70,7 +70,7 @@ pub(crate) fn compile_op(
         | OpKind::BNE(target)
         | OpKind::BLT(target)
         | OpKind::BGT(target) => {
-            let target_index = compiler.method().get_index_of_block_beginig_at(target);
+            let target_index = compiler.method().get_index_of_block_beginig_at(*target);
             let target = compiler.block_at(target_index).unwrap();
             let (b, a) = virt_stack.pop().zip(virt_stack.pop()).unwrap();
             compiler.cj(
@@ -85,16 +85,16 @@ pub(crate) fn compile_op(
             );
         }
         OpKind::BR(target) => {
-            let target_index = compiler.method().get_index_of_block_beginig_at(target);
+            let target_index = compiler.method().get_index_of_block_beginig_at(*target);
             let target = compiler.block_at(target_index).unwrap();
             compiler.unconditional_branch(target);
         }
         OpKind::STLoc(index) => {
             let a = virt_stack.pop().unwrap();
-            compiler.set_local(a, index).unwrap();
+            compiler.set_local(a, *index).unwrap();
         }
         OpKind::LDLoc(index) => {
-            virt_stack.push(compiler.load_local(index).unwrap());
+            virt_stack.push(compiler.load_local(*index).unwrap());
         }
         OpKind::Dup => {
             let a = virt_stack.pop().unwrap();
@@ -136,6 +136,16 @@ pub(crate) fn compile_op(
         OpKind::ConvI64 => {
             let a = virt_stack.pop().unwrap();
             virt_stack.push(compiler.convert(a, Type::I64).unwrap());
+        }
+        OpKind::Call(target,sig)=>{
+            let mut args = Vec::with_capacity(sig.args().len());
+            for _ in 0..sig.args().len(){
+                args.push(virt_stack.pop().unwrap());
+            }
+            args.reverse();
+            if let Some(index) = compiler.call(target.ident(),&args,&sig){
+                 virt_stack.push(index);
+            }
         }
         _ => todo!("Unsuported OpKind:{:?}", op.kind()),
     }

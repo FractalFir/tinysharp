@@ -1,6 +1,6 @@
 use inkwell::context::Context;
 use inkwell::types::{AnyTypeEnum, BasicTypeEnum, IntType};
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum Type {
     I64,
@@ -38,7 +38,7 @@ impl Type {
             _ => todo!("Can't create mangle string from type:{self:?}!"),
         }
     }
-    pub(crate) fn as_int(self, ctx: &'_ Context) -> Option<IntType<'_>> {
+    pub(crate) fn as_int<'ctx>(&self, ctx: &'ctx Context) -> Option<IntType<'ctx>> {
         match self {
             Type::I64 | Type::U64 => Some(ctx.i64_type()),
             Type::I32 | Type::U32 => Some(ctx.i32_type()),
@@ -48,7 +48,7 @@ impl Type {
             _ => None,
         }
     }
-    pub(crate) fn is_int(self) -> bool {
+    pub(crate) fn is_int(&self) -> bool {
         match self {
             Type::I64 | Type::U64 => true,
             Type::I32 | Type::U32 => true,
@@ -57,15 +57,15 @@ impl Type {
             _ => false,
         }
     }
-    pub(crate) fn arthm_promote(self) -> Type {
+    pub(crate) fn arthm_promote(&self) -> Type {
         match self {
-            Self::I64 | Self::U64 | Self::F64 | Self::I32 | Self::U32 | Self::F32 => self,
+            Self::I64 | Self::U64 | Self::F64 | Self::I32 | Self::U32 | Self::F32 => self.clone(),
             Self::I16 | Self::I8 => Self::I32,
             Self::U16 | Self::U8 => Self::U32,
             _ => todo!("Type promotion for arithmetic operations on type {self:?} unhanded!"),
         }
     }
-    pub(crate) fn as_llvm_type(self, ctx: &'_ Context) -> AnyTypeEnum<'_> {
+    pub(crate) fn as_llvm_type<'ctx>(&self, ctx: &'ctx Context) -> AnyTypeEnum<'ctx> {
         match self {
             Type::Void => inkwell::types::AnyTypeEnum::VoidType(ctx.void_type()),
             Type::I64 | Type::U64 => inkwell::types::AnyTypeEnum::IntType(ctx.i64_type()),
@@ -76,7 +76,7 @@ impl Type {
             _ => todo!("Can't convert type {self:?} to llvm type!"),
         }
     }
-    pub(crate) fn as_llvm_basic_type(self, ctx: &'_ Context) -> Option<BasicTypeEnum<'_>> {
+    pub(crate) fn as_llvm_basic_type<'ctx>(&self, ctx: &'ctx Context) -> Option<BasicTypeEnum<'ctx>> {
         match self {
             Type::Void => None,
             Type::I32 | Type::U32 => Some(BasicTypeEnum::IntType(ctx.i32_type())),
@@ -84,7 +84,7 @@ impl Type {
             _ => todo!("Can't convert type {self:?} to llvm type!"),
         }
     }
-    pub(crate) fn is_arthmetic(self) -> bool {
+    pub(crate) fn is_arthmetic(&self) -> bool {
         matches!(
             self,
             Self::I64
@@ -102,4 +102,52 @@ impl Type {
                 | Self::Char
         )
     }
+}
+trait GetType{
+    fn get_type()->Type;
+}
+impl GetType for u8{
+    fn get_type()->Type{
+        Type::U8
+    } 
+}
+impl GetType for u16{
+    fn get_type()->Type{
+        Type::U16
+    } 
+}
+impl GetType for i16{
+    fn get_type()->Type{
+        Type::I16
+    } 
+}
+impl GetType for u32{
+    fn get_type()->Type{
+        Type::U32
+    } 
+}
+impl GetType for i32{
+    fn get_type()->Type{
+        Type::I32
+    } 
+}
+impl GetType for u64{
+    fn get_type()->Type{
+        Type::U64
+    } 
+}
+impl GetType for i64{
+    fn get_type()->Type{
+        Type::I64
+    } 
+}
+impl GetType for f32{
+    fn get_type()->Type{
+        Type::F32
+    } 
+}
+impl GetType for f64{
+    fn get_type()->Type{
+        Type::F64
+    } 
 }

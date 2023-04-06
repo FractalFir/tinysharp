@@ -26,7 +26,7 @@ fn spilt_into_blocks(ops: &[OpKind]) -> VBlocks {
     let mut blocks = VBlocks::new();
     let mut index: InstructionIndex = 0;
     for op in ops {
-        block.push(Op::from_kind(*op));
+        block.push(Op::from_kind(op.clone()));
         for target in &targets {
             if *target == index {
                 blocks.push(OpBlock::from_ops(index + 1 - block.len(), block.clone()));
@@ -50,8 +50,8 @@ impl Method {
         }
         panic!("No block begins at instruction with index {index}!");
     }
-    pub(crate) fn get_local_type(&self, index: usize) -> Type {
-        self.locals[index]
+    pub(crate) fn get_local_type(&self, index: usize) -> &Type {
+        &self.locals[index]
     }
     fn resolve_node(
         &mut self,
@@ -88,14 +88,14 @@ impl Method {
         self.resolve_node(0, StackState::default())
     }
     pub fn from_ops(
-        sig: (&[Type], Type),
+        sig: Signature,
         ops: &[OpKind],
         locals: &[Type],
     ) -> Result<Self, MethodIRError> {
         let blocks: VBlocks = spilt_into_blocks(ops);
         let mut res = Self {
             blocks,
-            signature: Signature::new(sig),
+            signature: sig,
             locals: locals.into(),
         };
         res.resolve()?;

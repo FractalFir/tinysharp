@@ -1,12 +1,16 @@
 mod ir;
 mod jit;
 pub mod type_system;
+ use crate::ir::Signature;
 #[doc(inline)]
 pub use crate::ir::method::Method;
 #[doc(inline)]
 pub use crate::ir::op::OpKind;
 #[doc(inline)]
 pub use crate::ir::r#type::Type;
+#[doc(inline)]
+pub use crate::type_system::{Runtime,ClassPath,MethodPath};
+#[cfg(test)]
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::OptimizationLevel;
@@ -35,12 +39,12 @@ fn test_nop() {
     let args: [Type; 0] = [];
     let sig: (&[Type], Type) = (&args, Type::Void);
     let ops = [OpKind::Ret];
-    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Nop`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `Nop`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(&ctx);
     let fn_value = module.add_function("nop", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method,&module);
     module
         .print_to_file("target/nop.lli")
         .expect("Could not write module to file!");
@@ -55,12 +59,12 @@ fn test_add_i32() {
     let args: [Type; 2] = [Type::I32, Type::I32];
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Add, OpKind::Ret];
-    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile  method  `Add`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile  method  `Add`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(&ctx);
     let fn_value = module.add_function("add_i32", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method,&module);
     module.verify().expect("Could not verify module!");
     module
         .print_to_file("target/add_i32.lli")
@@ -84,7 +88,7 @@ fn test_wrong_return() {
     let args: [Type; 2] = [Type::I32, Type::I32];
     let sig: (&[Type], Type) = (&args, Type::F32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Add, OpKind::Ret];
-    if let Err(kind) = Method::from_ops(sig, &ops, &[]) {
+    if let Err(kind) = Method::from_ops(Signature::new(&sig), &ops, &[]) {
         if let MethodIRError::WrongReturnType { expected, got } = kind {
             assert_eq!(
                 expected,
@@ -121,12 +125,12 @@ fn test_mag_2_f32() {
         OpKind::Add,
         OpKind::Ret,
     ];
-    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Mag2`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `Mag2`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(&ctx);
     let fn_value = module.add_function("mag_2", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method,&module);
     module.verify().expect("Could not verify module!");
     module
         .print_to_file("target/mag_2.lli")
@@ -152,12 +156,12 @@ fn test_abs() {
         OpKind::LDArg(0), //6
         OpKind::Ret,      //7
     ];
-    let method = Method::from_ops(sig, &ops, &[]).expect("Could not compile method `Abs`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `Abs`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(&ctx);
     let fn_value = module.add_function("abs", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method,&module);
     module.verify().expect("Could not verify module!");
     module
         .print_to_file("target/abs.lli")
@@ -207,13 +211,13 @@ fn test_factorial() {
         OpKind::LDLoc(0), //15
         OpKind::Ret,      //16
     ];
-    let method = Method::from_ops(sig, &ops, &[Type::I32, Type::I32])
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[Type::I32, Type::I32])
         .expect("Could not compile method `Factorial`");
     let ctx = Context::create();
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(&ctx);
     let fn_value = module.add_function("factorial", fn_type, None);
-    let _mc = MethodCompiler::new(&ctx, fn_value, &method);
+    let _mc = MethodCompiler::new(&ctx, fn_value, &method,&module);
     module
         .print_to_file("target/factorial.lli")
         .expect("Could not write module to file!");

@@ -2,7 +2,8 @@
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
 use crate::jit::method_compiler::CMPType;
-#[derive(Clone, Copy, Debug)]
+use crate::type_system::MethodPath;
+#[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms, clippy::module_name_repetitions)]
 pub enum OpKind {
     Add,
@@ -22,6 +23,7 @@ pub enum OpKind {
     ConvI32,
     ConvU64,
     ConvI64,
+    Call(MethodPath,Signature),
     Div,
     Dup,
     LDCI32(i32), //Load const i32
@@ -85,6 +87,7 @@ impl OpKind {
             | Self::ConvI32
             | Self::ConvU64
             | Self::ConvI64
+            | Self::Call(_,_)
             | Self::XOr => None,
             Self::BGE(target)
             | Self::BLE(target)
@@ -104,7 +107,7 @@ fn get_op_type(a: Type, b: Type) -> Result<Type, MethodIRError> {
     }
     Ok(a)
 }
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Op {
     kind: OpKind,
     resolved_type: Option<Type>,
@@ -116,11 +119,11 @@ impl Op {
             resolved_type: None,
         }
     }
-    pub(crate) fn resolved_type(&self) -> Option<Type> {
-        self.resolved_type
+    pub(crate) fn resolved_type(&self) -> Option<&Type> {
+        self.resolved_type.as_ref()
     }
-    pub(crate) fn kind(&self) -> OpKind {
-        self.kind
+    pub(crate) fn kind(&self) -> &OpKind {
+        &self.kind
     }
     pub(crate) fn resolve(
         &mut self,
@@ -129,7 +132,7 @@ impl Op {
         locals: &[Type],
     ) -> Result<(), MethodIRError> {
         //println!("self:{self:?} State:{state:?}");
-        match self.kind {
+        match &self.kind {
             OpKind::Nop => {
                 //TODO:Reconsider resolving type being present for all ops. Seems kinda stupid now.
                 self.resolved_type = Some(Type::Void);
@@ -142,23 +145,23 @@ impl Op {
                 };
                 if ret != sig.ret {
                     return Err(MethodIRError::WrongReturnType {
-                        expected: sig.ret,
-                        got: ret,
+                        expected: sig.ret.clone(),
+                        got: ret.clone(),
                     });
                 }
                 self.resolved_type = Some(ret);
             }
             OpKind::LDArg(arg) => {
-                let t = sig.args[arg];
-                self.resolved_type = Some(t);
-                state.push(t);
+                let t = &sig.args[*arg];
+                self.resolved_type = Some(t.clone());
+                state.push(t.clone());
             }
             // Arthmentic
             OpKind::Mul | OpKind::Add | OpKind::Div | OpKind::Rem | OpKind::Sub => {
                 let a = state.pop().unwrap();
                 let b = state.pop().unwrap();
                 let op_res = get_op_type(a, b)?;
-                self.resolved_type = Some(op_res);
+                self.resolved_type = Some(op_res.clone());
                 assert!(op_res.is_arthmetic());
                 state.push(op_res);
             }
@@ -167,19 +170,19 @@ impl Op {
                 let a = state.pop().unwrap();
                 let b = state.pop().unwrap();
                 let op_res = get_op_type(a, b)?;
-                self.resolved_type = Some(op_res);
+                self.resolved_type = Some(op_res.clone());
                 state.push(op_res);
             }
             OpKind::Not | OpKind::Neg => {
                 let a = state.pop().unwrap();
                 let op_res = a.arthm_promote();
-                self.resolved_type = Some(op_res);
+                self.resolved_type = Some(op_res.clone());
                 state.push(op_res);
             }
             OpKind::Dup => {
                 let a = state.pop().unwrap();
-                state.push(a);
-                state.push(a);
+                state.push(a.clone());
+                state.push(a.clone());
                 self.resolved_type = Some(a);
             }
             OpKind::Pop => {
@@ -206,60 +209,72 @@ impl Op {
                 self.resolved_type = Some(op_res);
             }
             OpKind::ConvU8 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::U8);
                 state.push(Type::U8);
             }
             OpKind::ConvI8 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::I8);
                 state.push(Type::I8);
             }
             OpKind::ConvU16 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::U16);
                 state.push(Type::U16);
             }
             OpKind::ConvI16 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::I16);
                 state.push(Type::I16);
             }
             OpKind::ConvU32 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::U32);
                 state.push(Type::U32);
             }
             OpKind::ConvI32 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::I32);
                 state.push(Type::I32);
             }
             OpKind::ConvU64 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::U64);
                 state.push(Type::U64);
             }
             OpKind::ConvI64 => {
-                let a = state.pop().unwrap();
+                let _ = state.pop().unwrap();
                 self.resolved_type = Some(Type::I64);
                 state.push(Type::I64);
             }
             OpKind::BR(_) => self.resolved_type = Some(Type::Void),
             OpKind::LDLoc(index) => {
-                let loc_type = locals[index];
-                state.push(loc_type);
+                let loc_type = &locals[*index];
+                state.push(loc_type.clone());
             }
             OpKind::STLoc(index) => {
                 let s_type = state.pop().unwrap();
-                if s_type != locals[index] {
+                if s_type != locals[*index] {
                     return Err(MethodIRError::LocalVarTypeMismatch(
                         s_type,
-                        locals[index],
-                        index,
+                        locals[*index].clone(),
+                        *index,
                     ));
                 }
             }
+            OpKind::Call(_,sig)=>{
+                for arg_index in 0..sig.args.len(){
+                    let arg = sig.args[sig.args.len() - arg_index - 1].clone();
+                    let curr = state.pop().unwrap();
+                    if arg != curr{
+                        panic!("arg type mismatch in call!");
+                    }
+                }
+                if sig.ret != Type::Void{
+                      state.push(sig.ret.clone());
+                }
+            },
         }
         Ok(())
     }

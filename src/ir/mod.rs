@@ -4,7 +4,6 @@ pub mod op_block;
 pub mod r#type;
 use inkwell::context::Context;
 use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType};
-use op::OpKind;
 use op_block::OpBlock;
 use r#type::Type;
 #[derive(Debug)]
@@ -40,7 +39,7 @@ impl StackState {
     }*/
 }
 #[derive(Debug, Clone)]
-pub(crate) struct Signature {
+pub struct Signature {
     args: VType,
     ret: Type,
 }
@@ -53,10 +52,10 @@ impl Signature {
         }
         res
     }
-    pub(crate) fn new(src: SigType) -> Self {
+    pub(crate) fn new(src: &SigType) -> Self {
         Self {
             args: src.0.into(),
-            ret: src.1,
+            ret: src.1.clone(),
         }
     }
     pub(crate) fn argc(&self) -> usize {
@@ -64,6 +63,9 @@ impl Signature {
     }
     pub(crate) fn args(&self) -> &[Type] {
         &self.args
+    }
+    pub(crate) fn ret(&self)->&Type{
+        &self.ret
     }
     pub(crate) fn as_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
         let mut args = Vec::new();
