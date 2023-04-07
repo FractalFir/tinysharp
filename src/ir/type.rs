@@ -76,7 +76,10 @@ impl Type {
             _ => todo!("Can't convert type {self:?} to llvm type!"),
         }
     }
-    pub(crate) fn as_llvm_basic_type<'ctx>(&self, ctx: &'ctx Context) -> Option<BasicTypeEnum<'ctx>> {
+    pub(crate) fn as_llvm_basic_type<'ctx>(
+        &self,
+        ctx: &'ctx Context,
+    ) -> Option<BasicTypeEnum<'ctx>> {
         match self {
             Type::Void => None,
             Type::I32 | Type::U32 => Some(BasicTypeEnum::IntType(ctx.i32_type())),
@@ -103,51 +106,126 @@ impl Type {
         )
     }
 }
-trait GetType{
-    fn get_type()->Type;
+pub trait GetType {
+    type RawType;
+    fn get_type() -> Type;
 }
-impl GetType for u8{
-    fn get_type()->Type{
+impl GetType for u8 {
+    type RawType = u8;
+    fn get_type() -> Type {
         Type::U8
-    } 
+    }
 }
-impl GetType for u16{
-    fn get_type()->Type{
+impl GetType for i8 {
+    type RawType = i8;
+    fn get_type() -> Type {
+        Type::I8
+    }
+}
+impl GetType for u16 {
+    type RawType = u16;
+    fn get_type() -> Type {
         Type::U16
-    } 
+    }
 }
-impl GetType for i16{
-    fn get_type()->Type{
+impl GetType for i16 {
+    type RawType = i16;
+    fn get_type() -> Type {
         Type::I16
-    } 
+    }
 }
-impl GetType for u32{
-    fn get_type()->Type{
+impl GetType for u32 {
+    type RawType = u32;
+    fn get_type() -> Type {
         Type::U32
-    } 
+    }
 }
-impl GetType for i32{
-    fn get_type()->Type{
+impl GetType for i32 {
+    type RawType = i32;
+    fn get_type() -> Type {
         Type::I32
-    } 
+    }
 }
-impl GetType for u64{
-    fn get_type()->Type{
+impl GetType for u64 {
+    type RawType = u64;
+    fn get_type() -> Type {
         Type::U64
-    } 
+    }
 }
-impl GetType for i64{
-    fn get_type()->Type{
+impl GetType for i64 {
+    type RawType = i64;
+    fn get_type() -> Type {
         Type::I64
-    } 
+    }
 }
-impl GetType for f32{
-    fn get_type()->Type{
+impl GetType for f32 {
+    type RawType = f32;
+    fn get_type() -> Type {
         Type::F32
-    } 
+    }
 }
-impl GetType for f64{
-    fn get_type()->Type{
+impl GetType for f64 {
+    type RawType = f64;
+    fn get_type() -> Type {
         Type::F64
-    } 
+    }
 }
+pub trait InteropSend: GetType {
+    fn get_raw(&self) -> Self::RawType;
+}
+pub trait InteropRecive: GetType {
+    fn get_converted(src: Self::RawType) -> Self;
+}
+impl<T: GetType<RawType = Self>> InteropSend for T
+where
+    T: Copy,
+{
+    fn get_raw(&self) -> Self {
+        *self
+    }
+}
+impl<T: GetType<RawType = Self>> InteropRecive for T
+where
+    T: Copy,
+{
+    fn get_converted(src: Self) -> Self {
+        src
+    }
+}
+trait TypeMarker {}
+impl TypeMarker for Type {}
+use std::borrow::Borrow;
+pub trait AsArgTypeList {
+    type Output: Borrow<[Type]>;
+    type RawType;
+    fn get_type_list() -> Self::Output;
+}
+impl AsArgTypeList for () {
+    type Output = [Type; 0];
+    type RawType = ();
+    fn get_type_list() -> Self::Output {
+        []
+    }
+}
+impl<A: GetType> AsArgTypeList for (A,) {
+    type Output = [Type; 1];
+    type RawType = (A::RawType,);
+    fn get_type_list() -> Self::Output {
+        [A::get_type()]
+    }
+}
+impl<A: GetType, B: GetType> AsArgTypeList for (A, B) {
+    type Output = [Type; 2];
+    type RawType = (A::RawType, B::RawType);
+    fn get_type_list() -> Self::Output {
+        [A::get_type(), B::get_type()]
+    }
+}
+impl<A: GetType, B: GetType, C: GetType> AsArgTypeList for (A, B, C) {
+    type Output = [Type; 3];
+    type RawType = (A::RawType, B::RawType, C::RawType);
+    fn get_type_list() -> Self::Output {
+        [A::get_type(), B::get_type(), C::get_type()]
+    }
+}
+//impl AsArgTypeList for (,)

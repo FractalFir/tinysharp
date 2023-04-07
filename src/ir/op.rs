@@ -2,7 +2,7 @@
 use super::r#type::Type;
 use super::{ArgIndex, InstructionIndex, LocalVarIndex, MethodIRError, Signature, StackState};
 use crate::jit::method_compiler::CMPType;
-use crate::type_system::MethodPath;
+use crate::type_system::paths::{ClassPath, MethodPath};
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms, clippy::module_name_repetitions)]
 pub enum OpKind {
@@ -23,7 +23,7 @@ pub enum OpKind {
     ConvI32,
     ConvU64,
     ConvI64,
-    Call(MethodPath,Signature),
+    Call(MethodPath, Signature),
     Div,
     Dup,
     LDCI32(i32), //Load const i32
@@ -87,7 +87,7 @@ impl OpKind {
             | Self::ConvI32
             | Self::ConvU64
             | Self::ConvI64
-            | Self::Call(_,_)
+            | Self::Call(_, _)
             | Self::XOr => None,
             Self::BGE(target)
             | Self::BLE(target)
@@ -263,18 +263,18 @@ impl Op {
                     ));
                 }
             }
-            OpKind::Call(_,sig)=>{
-                for arg_index in 0..sig.args.len(){
+            OpKind::Call(_, sig) => {
+                for arg_index in 0..sig.args.len() {
                     let arg = sig.args[sig.args.len() - arg_index - 1].clone();
                     let curr = state.pop().unwrap();
-                    if arg != curr{
+                    if arg != curr {
                         panic!("arg type mismatch in call!");
                     }
                 }
-                if sig.ret != Type::Void{
-                      state.push(sig.ret.clone());
+                if sig.ret != Type::Void {
+                    state.push(sig.ret.clone());
                 }
-            },
+            }
         }
         Ok(())
     }

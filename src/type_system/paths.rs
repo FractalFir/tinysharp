@@ -36,7 +36,7 @@ impl ClassPath {
         &self.identifier
     }
 }
-#[derive(Clone,Hash)]
+#[derive(Clone, Hash)]
 pub struct MethodPath {
     identifier: String,
     assembly_end: usize,
@@ -45,14 +45,14 @@ pub struct MethodPath {
     method_end: usize,
     //sig: Signature,
 }
-impl Eq for MethodPath{}
-impl PartialEq for MethodPath{
-    fn eq(&self,other:&Self)->bool{
-       self.assembly_end == other.assembly_end && 
-       self.namespace_end == other.namespace_end &&
-       self.class_end == other.class_end &&
-       self.method_end == other.method_end &&
-       self.identifier == other.identifier
+impl Eq for MethodPath {}
+impl PartialEq for MethodPath {
+    fn eq(&self, other: &Self) -> bool {
+        self.assembly_end == other.assembly_end
+            && self.namespace_end == other.namespace_end
+            && self.class_end == other.class_end
+            && self.method_end == other.method_end
+            && self.identifier == other.identifier
     }
 }
 impl MethodPath {
@@ -107,10 +107,18 @@ impl MethodPath {
         &self.identifier
     }
 }
-use std::fmt::{Debug,Formatter};
-impl Debug for MethodPath{
-    fn fmt(&self,f:&mut Formatter<'_>) -> Result<(), std::fmt::Error>{
-        write!(f,"MethodPath{{asm:{},namespace:{},class:{},method:{},sig:{}}}", self.assembly_name(), self.namespace(), self.class_name(),self.method_name(),self.sig_string())
+use std::fmt::{Debug, Formatter};
+impl Debug for MethodPath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(
+            f,
+            "MethodPath{{asm:{},namespace:{},class:{},method:{},sig:{}}}",
+            self.assembly_name(),
+            self.namespace(),
+            self.class_name(),
+            self.method_name(),
+            self.sig_string()
+        )
     }
 }
 #[cfg(test)]

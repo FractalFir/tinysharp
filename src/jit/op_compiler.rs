@@ -137,14 +137,14 @@ pub(crate) fn compile_op(
             let a = virt_stack.pop().unwrap();
             virt_stack.push(compiler.convert(a, Type::I64).unwrap());
         }
-        OpKind::Call(target,sig)=>{
+        OpKind::Call(target, sig) => {
             let mut args = Vec::with_capacity(sig.args().len());
-            for _ in 0..sig.args().len(){
+            for _ in 0..sig.args().len() {
                 args.push(virt_stack.pop().unwrap());
             }
             args.reverse();
-            if let Some(index) = compiler.call(target.ident(),&args,&sig){
-                 virt_stack.push(index);
+            if let Some(index) = compiler.call(target.ident(), &args, &sig) {
+                virt_stack.push(index);
             }
         }
         _ => todo!("Unsuported OpKind:{:?}", op.kind()),

@@ -1,17 +1,10 @@
 use super::compile_variable::Variable;
-use crate::ir::op_block::OpBlock;
-use crate::ir::r#type::Type;
-use crate::ir::BlockLink;
-use crate::Method;
-use inkwell::basic_block::BasicBlock;
-use inkwell::builder::Builder;
-use inkwell::context::Context;
-use inkwell::types::IntType;
-use inkwell::values::FunctionValue;
-use inkwell::{FloatPredicate, IntPredicate};
 use super::MethodCompileError;
-use crate::ir::Signature;
-use crate::Module;
+use crate::ir::{method::Method, op_block::OpBlock, r#type::Type, BlockLink, Signature};
+use inkwell::{
+    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, types::IntType,
+    values::FunctionValue, FloatPredicate, IntPredicate,
+};
 fn as_u64(i: i64) -> u64 {
     unsafe { std::mem::transmute(i) }
 }
@@ -61,7 +54,7 @@ pub(crate) struct MethodCompiler<'a> {
     variables: Vec<Variable<'a>>,
     blocks: Vec<BasicBlock<'a>>,
     builder: Builder<'a>,
-    module:*const Module<'a>,
+    module: *const Module<'a>,
 }
 pub(crate) struct VirtualStack {
     state: Vec<usize>,
@@ -92,19 +85,23 @@ impl<'a> MethodCompiler<'a> {
     pub(crate) fn method(&self) -> &Method {
         self.method
     }
-    pub(crate) fn call(&mut self,name:&str,args:&[usize],sig:&Signature)->Option<usize>{
-        let call_target = unsafe{(*self.module).get_function(name).expect("Can't find method!")};
+    pub(crate) fn call(&mut self, name: &str, args: &[usize], sig: &Signature) -> Option<usize> {
+        let call_target = unsafe {
+            (*self.module)
+                .get_function(name)
+                .expect("Can't find method!")
+        };
         let mut arg_bves = Vec::with_capacity(args.len());
-        for arg in args{
+        for arg in args {
             let arg = self.variables[*arg];
             arg_bves.push(arg.as_bve().into());
         }
-        let res = self.builder.build_call(call_target,&arg_bves,name);
-        if *sig.ret() == Type::Void{
+        let res = self.builder.build_call(call_target, &arg_bves, name);
+        if *sig.ret() == Type::Void {
             return None;
         }
         let res = res.try_as_basic_value().left().unwrap();
-        let res = Variable::from_bve_typed(res,sig.ret());
+        let res = Variable::from_bve_typed(res, sig.ret());
         self.variables.push(res);
         Some(self.variables.len() - 1)
     }
@@ -429,9 +426,14 @@ impl<'a> MethodCompiler<'a> {
         }
         Some(())
     }
-    pub(crate) fn new(ctx: &'a Context, fnc: FunctionValue<'a>, method: &'a Method,module:&Module) -> Result<(),MethodCompileError> {
+    pub(crate) fn new(
+        ctx: &'a Context,
+        fnc: FunctionValue<'a>,
+        method: &'a Method,
+        module: &Module,
+    ) -> Result<(), MethodCompileError> {
         let ptr = module as *const _ as *const ();
-        let module = ptr as * const Module<'a>;
+        let module = ptr as *const Module<'a>;
         let builder = ctx.create_builder();
         let mut blocks = Vec::new();
         let mut variables = Vec::new();
@@ -467,4 +469,3 @@ impl<'a> MethodCompiler<'a> {
         Ok(())
     }
 }
-

@@ -1,8 +1,8 @@
+use crate::ir::Signature;
 use crate::{Method, OpKind, Type};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::OptimizationLevel;
-use crate::ir::Signature;
 pub(crate) fn rnd_u32() -> u32 {
     unsafe {
         static mut STATE_32: u32 = 1_750_234_402;
@@ -26,13 +26,15 @@ fn compile_fn<'a>(ctx: &'a Context, method: &'a Method) -> Module<'a> {
     let module = ctx.create_module("my_mod");
     let fn_type = method.as_fn_type(ctx);
     let fn_value = module.add_function("f", fn_type, None);
-    let _mc = MethodCompiler::new(ctx, fn_value, method,&module);
+    let _mc = MethodCompiler::new(ctx, fn_value, method, &module);
     match module.verify() {
         Ok(_) => (),
         Err(msg) => {
             let rnd = rnd_u32();
             let file = format!("target/test_res{rnd}.lli");
-            module.print_to_file(&file).expect("Could not print to file!");
+            module
+                .print_to_file(&file)
+                .expect("Could not print to file!");
             panic!(
                 "Module compilation failed with message:\n{msg}\n,dumping result to file:'{file}'"
             );
@@ -46,7 +48,8 @@ fn add_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Add, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `add`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `add`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -67,7 +70,8 @@ fn sub_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Sub, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -88,7 +92,8 @@ fn div_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Div, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -109,7 +114,8 @@ fn rem_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Rem, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -130,7 +136,8 @@ fn mul_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Mul, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -151,7 +158,8 @@ fn and_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::And, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -173,7 +181,8 @@ fn or_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::Or, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -194,7 +203,8 @@ fn xor_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::XOr, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -215,7 +225,8 @@ fn not_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::Not, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `not`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `not`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -235,7 +246,8 @@ fn dup_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::Dup, OpKind::Add, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -260,7 +272,8 @@ fn pop_i32() {
         OpKind::Ret,
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `sub`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -280,7 +293,8 @@ fn neg_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::Neg, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `neg`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `neg`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -305,7 +319,8 @@ fn ld_st_loc_i32() {
         OpKind::Ret,
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[Type::I32]).expect("Could not compile method `neg`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[Type::I32])
+        .expect("Could not compile method `neg`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -333,7 +348,8 @@ fn bge_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -370,7 +386,8 @@ fn beq_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -399,7 +416,8 @@ fn bne_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -428,7 +446,8 @@ fn blt_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -457,7 +476,8 @@ fn bgt_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `bge`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -486,7 +506,8 @@ fn ble_i32() {
         OpKind::Ret,       //6
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `ble`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `ble`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -521,7 +542,8 @@ fn br() {
         OpKind::Ret,       //4
     ];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `add`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `add`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -537,7 +559,8 @@ fn nop() {
     let sig: (&[Type], Type) = (&args, Type::Void);
     let ops = [OpKind::Nop, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `nop`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `nop`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -553,7 +576,8 @@ fn shl_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::LDArg(1), OpKind::SHL, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `shl`");
+    let method =
+        Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `shl`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -574,7 +598,8 @@ fn conv_i8() {
     let sig: (&[Type], Type) = (&args, Type::I8);
     let ops = [OpKind::LDArg(0), OpKind::ConvI8, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_i8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_i8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -597,7 +622,8 @@ fn conv_u8() {
     let sig: (&[Type], Type) = (&args, Type::U8);
     let ops = [OpKind::LDArg(0), OpKind::ConvU8, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_u8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_u8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -620,7 +646,8 @@ fn conv_i16() {
     let sig: (&[Type], Type) = (&args, Type::I16);
     let ops = [OpKind::LDArg(0), OpKind::ConvI16, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_i8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_i8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -645,7 +672,8 @@ fn conv_u16() {
     let sig: (&[Type], Type) = (&args, Type::U16);
     let ops = [OpKind::LDArg(0), OpKind::ConvU16, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_u8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_u8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -668,7 +696,8 @@ fn conv_i32() {
     let sig: (&[Type], Type) = (&args, Type::I32);
     let ops = [OpKind::LDArg(0), OpKind::ConvI32, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_i8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_i8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -688,7 +717,8 @@ fn conv_u32() {
     let sig: (&[Type], Type) = (&args, Type::U32);
     let ops = [OpKind::LDArg(0), OpKind::ConvU32, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_u8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_u8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -708,7 +738,8 @@ fn conv_i64() {
     let sig: (&[Type], Type) = (&args, Type::I64);
     let ops = [OpKind::LDArg(0), OpKind::ConvI64, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_i8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_i8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)
@@ -728,7 +759,8 @@ fn conv_u64() {
     let sig: (&[Type], Type) = (&args, Type::U64);
     let ops = [OpKind::LDArg(0), OpKind::ConvU64, OpKind::Ret];
     let ctx = Context::create();
-    let method = Method::from_ops(Signature::new(&sig), &ops, &[]).expect("Could not compile method `conv_u8`");
+    let method = Method::from_ops(Signature::new(&sig), &ops, &[])
+        .expect("Could not compile method `conv_u8`");
     let module = compile_fn(&ctx, &method);
     let execution_engine = module
         .create_jit_execution_engine(OptimizationLevel::Aggressive)

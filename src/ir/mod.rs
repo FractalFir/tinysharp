@@ -5,7 +5,7 @@ pub mod r#type;
 use inkwell::context::Context;
 use inkwell::types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType};
 use op_block::OpBlock;
-use r#type::Type;
+use r#type::{AsArgTypeList, GetType, Type};
 #[derive(Debug)]
 pub enum MethodIRError {
     WrongReturnType { expected: Type, got: Type },
@@ -44,6 +44,12 @@ pub struct Signature {
     ret: Type,
 }
 impl Signature {
+    pub fn from_types<Args: AsArgTypeList, Ret: GetType>() -> Signature {
+        use std::borrow::Borrow;
+        let args = Args::get_type_list();
+        let ret = Ret::get_type();
+        Signature::new(&(args.borrow(), ret))
+    }
     pub(crate) fn to_mangle_string(&self) -> String {
         let mut res = String::new();
         for arg in &self.args {
@@ -64,7 +70,7 @@ impl Signature {
     pub(crate) fn args(&self) -> &[Type] {
         &self.args
     }
-    pub(crate) fn ret(&self)->&Type{
+    pub(crate) fn ret(&self) -> &Type {
         &self.ret
     }
     pub(crate) fn as_fn_type<'a>(&self, ctx: &'a Context) -> FunctionType<'a> {
