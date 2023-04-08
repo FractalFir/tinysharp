@@ -228,4 +228,38 @@ impl<A: GetType, B: GetType, C: GetType> AsArgTypeList for (A, B, C) {
         [A::get_type(), B::get_type(), C::get_type()]
     }
 }
+pub trait ArgsToRaw {
+    type Raw;
+    fn to_raw(self) -> Self::Raw;
+}
+impl ArgsToRaw for () {
+    type Raw = ();
+    fn to_raw(self) -> () {}
+}
+impl<A: InteropSend> ArgsToRaw for (A,) {
+    type Raw = (<A as GetType>::RawType,);
+    fn to_raw(self) -> Self::Raw {
+        (A::get_raw(&self.0),)
+    }
+}
+impl<A: InteropSend, B: InteropSend> ArgsToRaw for (A, B) {
+    type Raw = (<A as GetType>::RawType, <B as GetType>::RawType);
+    fn to_raw(self) -> Self::Raw {
+        (A::get_raw(&self.0), B::get_raw(&self.1))
+    }
+}
+impl<A: InteropSend, B: InteropSend, C: InteropSend> ArgsToRaw for (A, B, C) {
+    type Raw = (
+        <A as GetType>::RawType,
+        <B as GetType>::RawType,
+        <C as GetType>::RawType,
+    );
+    fn to_raw(self) -> Self::Raw {
+        (
+            A::get_raw(&self.0),
+            B::get_raw(&self.1),
+            C::get_raw(&self.2),
+        )
+    }
+}
 //impl AsArgTypeList for (,)

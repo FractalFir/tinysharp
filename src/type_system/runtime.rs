@@ -2,11 +2,11 @@ use super::{
     paths::{ClassPath, MethodPath},
     Method, MethodCompileError, MethodRef, SingularRuntimeGuard,
 };
-use crate::utilis::keyed_collection::KeyedCollection;
 use crate::ir::{
     method::Method as IRMethod,
-    r#type::{AsArgTypeList, GetType},
+    r#type::{AsArgTypeList, GetType, InteropRecive, InteropSend},
 };
+use crate::utilis::keyed_collection::KeyedCollection;
 use core::marker::PhantomData;
 use inkwell::{
     context::Context, execution_engine::ExecutionEngine, module::Module, OptimizationLevel,
@@ -40,13 +40,21 @@ impl<'a> InnerRuntime<'a> {
 impl<'a> InnerRuntime<'a> {
     fn add_method(&mut self, method: IRMethod, path: MethodPath) {
         let method = Method::new(method, &self.module, &path, self.ctx);
+        println!("Inserting method mangled into:{}.", path.ident());
         self.methods.insert(path, method);
     }
     fn compile_all(&mut self) -> Result<(), MethodCompileError> {
         for method in self.methods.values_mut() {
             method.compile(&self.ctx, &self.module)?;
         }
+        ExecutionEngine::link_in_mc_jit();
         Ok(())
+    }
+    fn verify(&self) -> Result<(), String> {
+        match self.module.verify() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err.to_string()),
+        }
     }
     fn get_method_ptr<Args: AsArgTypeList, Ret: GetType>(
         &self,
@@ -58,6 +66,7 @@ impl<'a> InnerRuntime<'a> {
         use crate::Signature;
         let sig = Signature::from_types::<Args, Ret>();
         let path = MethodPath::new(assembly, namespace, class_name, method_name, &sig);
+        println!("Searching for method mangled into:{}.", path.ident());
         unsafe {
             match self.execution_engine.get_function(path.ident()) {
                 Ok(fptr) => Some(fptr.into_raw()),
@@ -87,7 +96,10 @@ impl Runtime {
     pub fn compile_all(&mut self) -> Result<(), MethodCompileError> {
         self.runtime.as_mut().unwrap().compile_all()
     }
-    pub fn get_method_ref<'a, Args: AsArgTypeList, Ret: GetType>(
+    pub fn verify(&self) -> Result<(), String> {
+        self.runtime.as_ref().unwrap().verify()
+    }
+    pub fn get_method_ref<'a, Args: AsArgTypeList, Ret: GetType + InteropRecive>(
         &'a self,
         assembly: &str,
         namespace: &str,
@@ -104,6 +116,12 @@ impl Runtime {
             fptr,
             _rtime: PhantomData,
         })
+    }
+    pub fn load_asm<R: std::io::Read>(
+        &mut self,
+        asm: &mut R,
+    ) -> Result<(), crate::importer::assembly::ImportError> {
+        crate::importer::assembly::import_assembly(asm, self)
     }
 }
 #[derive(Debug)]
@@ -167,3 +185,14 @@ fn init_runtime() {
     }
     drop(runtime_2);
 } //TODO:finalise types
+#[test]
+fn import() {
+    use std::fs::File;
+    let mut runtime = Runtime::init_await().expect("Coud not initialise the runtime!");
+    let mut src =
+        File::open("test_asm/SimpleFunctions/bin/Any CPU/Debug/net7.0/SimpleFunctions.dll")
+            .expect("Could not open test file!");
+    runtime
+        .load_asm(&mut src)
+        .expect("Could not load assembly!");
+}

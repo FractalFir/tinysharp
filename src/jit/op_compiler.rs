@@ -31,7 +31,7 @@ pub(crate) fn compile_op(
     op: &Op,
     virt_stack: &mut VirtualStack,
 ) -> Option<()> {
-    println!("Compiling op:{op:?}");
+    //println!("Compiling op:{op:?}");
     match op.kind() {
         OpKind::Add
         | OpKind::And

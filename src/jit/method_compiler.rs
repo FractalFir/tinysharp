@@ -466,6 +466,10 @@ impl<'a> MethodCompiler<'a> {
         for (index, block) in method.blocks.iter().enumerate() {
             res.block_ops(block, index);
         }
-        Ok(())
+        if fnc.verify(false) {
+            Ok(())
+        } else {
+            Err(MethodCompileError::VerificationFaliure)
+        }
     }
 }

@@ -1,3 +1,5 @@
+mod gc;
+mod importer;
 mod ir;
 mod jit;
 pub mod type_system;
@@ -14,9 +16,9 @@ pub use crate::type_system::{
     paths::{ClassPath, MethodPath},
     runtime::Runtime,
 };
+use inkwell::module::Module;
 #[cfg(test)]
 use inkwell::{context::Context, OptimizationLevel};
-use inkwell::module::Module;
 use ir::MethodIRError;
 use jit::method_compiler::MethodCompiler;
 //#[doc(inline)]
